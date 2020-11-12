@@ -7,8 +7,7 @@ from torchvision import transforms
 
 
 class Data:
-    def __init__(self, X, Y, X_TE, Y_TE, X_NOLB, X_TOLB,
-                 data_transform, handler, n_classes):
+    def __init__(self, X, Y, X_TE, Y_TE, X_NOLB, X_TOLB, data_transform, handler, n_classes):
         self.X = X
         self.Y = Y
         self.X_NOLB = X_NOLB

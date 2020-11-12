@@ -37,12 +37,15 @@ if __name__ == "__main__":
                                             random_state=42,
                                             shuffle=True)
     X_TOLB = torch.empty([10, 28, 28], dtype=torch.uint8)
+    
+    
 
     data = Data(X, Y, X_TE, Y_TE, X_NOLB, X_TOLB,                                           
             data_transform, handler, n_classes)                                         
   
-    data = Data(X, Y, X_TE, Y_TE, X_NOLB,
-                data_transform, handler, n_classes)
+  
+    #data = Data(X, Y, X_TE, Y_TE, X_NOLB,
+    #            data_transform, handler, n_classes)
 
     # train model
     n_epoch = 5

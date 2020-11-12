@@ -3,6 +3,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.express as px
+
 from PIL import Image, ImageEnhance
 from dataset import get_dataset, get_handler
 from io import BytesIO
@@ -13,6 +14,7 @@ from model import get_net
 from data import Data
 from train import Train
 from sample import Sample
+
 import base64
 import torch
 import umap

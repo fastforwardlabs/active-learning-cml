@@ -153,10 +153,10 @@ def create_layout(app):
                                     NamedSlider(
                                         name="Number Of Epochs",
                                         short="epochs",
-                                        min=250,
-                                        max=1000,
+                                        min=10,
+                                        max=50,
                                         step=None,
-                                        val=500,
+                                        val=10,
                                         marks={
                                             i: str(i) for i in [10, 20, 30, 40]
                                         },

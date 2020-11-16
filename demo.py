@@ -250,7 +250,7 @@ def create_layout(app):
         ],
     )
   
-  def demo_callbacks(app):
+def demo_callbacks(app):
     def generate_figure_image(groups, layout):
         data = []
 

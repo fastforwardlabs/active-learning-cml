@@ -151,10 +151,50 @@ labels = np.concatenate((data.Y.numpy(),
 umap_embeddings = reducer.fit_transform(embeddings)
 EMB_HISTORY = (umap_embeddings, labels)
 print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
+'''
 fig = px.scatter(x=umap_embeddings[:, 0], 
                  y=umap_embeddings[:, 1],
                  color=labels)
 fig.show()
-
+'''
 import matplotlib.pyplot as plt
+colors = ['violet', 'blue', 'red', 'yellow', 'green', 'orange', 'magenta', 'xkcd:lilac', 'xkcd:purplish blue', 'xkcd:light blue', 'xkcd: black', 'xkcd: black', 'xkcd: black', 'xkcd: black', 'xkcd: black', 'xkcd:fuchsia']
+values = np.unique(labels)
+colorvalues = [colors[int(l)] for l in labels]
 
+#unique(colorvalues)
+
+fig, ax = plt.subplots()
+
+
+plt.scatter(x=umap_embeddings[:, 0], 
+           y=umap_embeddings[:, 1],
+           c=colorvalues,
+           label=[str(int(l))+":"+colors[int(l)] for l in values]
+          )
+#plt.legend(values, [colors[int(l)] for l in values])
+plt.show()
+
+labels
+
+
+
+
+embeddings_tolb.shape
+
+np.unique(data.Y)
+np.unique(labels)
+
+
+np.ones(embeddings_tolb.shape[0])*15
+
+#c = np.arange(1.0, len(np.unique(labels)))
+c = np.random.randint(1, 5, size=10)
+c
+fig, ax = plt.subplots()
+
+scatter = ax.scatter(x=umap_embeddings[:, 0], 
+            y=umap_embeddings[:, 1], c=c)
+legend1 = ax.legend(*scatter.legend_elements(),
+                    loc="lower left", title="Classes")
+ax.add_artist(legend1)

@@ -15,9 +15,124 @@ import pandas as pd
 import plotly.graph_objs as go
 import scipy.spatial.distance as spatial_distance
 
+from PIL import Image, ImageEnhance
+from dataset import get_dataset, get_handler
+from sklearn.model_selection import train_test_split
+from torchvision import transforms
+from model import get_net
+from data import Data
+from train import Train
+from sample import Sample
+import torch
+import umap
+import os
+
+dataset_name = 'MNIST'
+strategy_names = ['random', 'entropy', 'entropydrop']
+data_transform = transforms.Compose([transforms.ToTensor(),
+                                     transforms.Normalize((0.1307,),
+                                                          (0.3081,))])
+handler = get_handler(dataset_name)
+n_classes = 10
+n_epoch = 10
+
+"""
+Define model architecture
+"""
+net = get_net(dataset_name)
+
+"""
+Get dataset, set data handlers
+Use 10k training dataset from MNIST as the entire dataset
+Further split into Test/Train, then split train into labeled and unlabeled
+X (Training): 1000 datapoints
+X_NOLB (unlabeled datapool): 7000
+X_TE (Testing): 2000 datapoints
+X_TOLB: Datapoints that require human labeling
+"""
+# FIX, do this in data object?
+_, _, X_INIT, Y_INIT = get_dataset(dataset_name)
+
+X_TR, X_TE, Y_TR, Y_TE = train_test_split(X_INIT, Y_INIT,
+                                          test_size=0.2,
+                                          random_state=42,
+                                          shuffle=True)
+
+X_NOLB, X, Y_NOLB, Y = train_test_split(X_TR, Y_TR,
+                                        test_size=0.125,
+                                        random_state=42,
+                                        shuffle=True)
+
+X_TOLB = torch.empty([10, 28, 28], dtype=torch.uint8)
+"""
+Make data and train objects
+"""
+data = Data(X, Y, X_TE, Y_TE, X_NOLB, X_TOLB,
+            data_transform, handler, n_classes)
+"""
+VARs to control embedding figures
+"""
+EMB_HISTORY = None
+"""
+Set random seeds for UMAP
+Initialize UMAP reducer
+"""
+np.random.seed(42)
+reducer = umap.UMAP(random_state=42)
+
+def reset_data():
+    global data
+    data = Data(X, Y, X_TE, Y_TE, X_NOLB, X_TOLB,
+                data_transform, handler, n_classes)
+    return data
+
+
+def train_model():
+    train_obj = Train(net, handler, n_epoch, data)
+    train_obj.train()
+    return train_obj
+
+
+def data_to_label(strategy):
+    print('getting new data to label')
+    sample = Sample(train_obj.clf, data)
+    if strategy == "random":
+        print('random')
+        X_TOLB, X_NOLB = sample.random(10)
+    elif strategy == "entropy":
+        print('entropy')
+        X_TOLB, X_NOLB = sample.entropy(10)
+    elif strategy == "entropydrop":
+        print('entropy dropout')
+        X_TOLB, X_NOLB = sample.entropy_dropout(10, 5)
+    return (X_TOLB, X_NOLB)
+
+
+def numpy_to_b64(array, scalar=True):
+    # Convert from 0-1 to 0-255
+    if scalar:
+        array = np.uint8(255 * array)
+
+    array[np.where(array == 0)] = 255
+
+    im_pil = Image.fromarray(array)
+
+    buff = BytesIO()
+    im_pil.save(buff, format="png")
+    im_b64 = base64.b64encode(buff.getvalue()).decode("utf-8")
+
+    return "data:image/png;base64," + im_b64
+
+
+def create_img(arr, shape=(28, 28)):
+    arr = arr.reshape(shape).astype(np.float64)
+    image_b64 = numpy_to_b64(arr)
+    return image_b64
+
+
 # get relative data folder
 PATH = pathlib.Path(__file__).parent
-    
+
 with open(PATH.joinpath("demo_intro.md"), "r") as file:
   demo_intro_md = file.read()
 
@@ -251,16 +366,29 @@ def create_layout(app):
     )
   
 def demo_callbacks(app):
+    '''
+    def generate_figure_image(umap_embeddings, labels, layout):
+        scatter = go.Scatter(
+          x=umap_embeddings[:, 0],
+          y=umap_embeddings[:, 1],
+          text=[labels for _ in range(umap_embeddings[:, 0].shape[0])],
+          textposition="top center",
+          mode="markers",
+          marker=dict(size=3, symbol="circle")
+        )
+        figure = go.Figure(data=scatter, layout=layout)
+        
+        return figure
+    '''
     def generate_figure_image(groups, layout):
         data = []
 
         for idx, val in groups:
-            scatter = go.Scatter3d(
+            scatter = go.Scatter(
                 name=idx,
-                x=val["x"],
-                y=val["y"],
-                z=val["z"],
-                text=[idx for _ in range(val["x"].shape[0])],
+                x=val["dim1"],
+                y=val["dim2"],
+                text=[idx for _ in range(val["dim1"].shape[0])],
                 textposition="top center",
                 mode="markers",
                 marker=dict(size=3, symbol="circle"),
@@ -270,7 +398,7 @@ def demo_callbacks(app):
         figure = go.Figure(data=data, layout=layout)
 
         return figure
-
+    
     # Scatter Plot of the t-SNE datasets
     def generate_figure_word_vec(
         embedding_df, layout, wordemb_display_mode, selected_word, dataset
@@ -328,8 +456,7 @@ def demo_callbacks(app):
             Output("learn-more-button", "children"),
         ],
         [Input("learn-more-button", "n_clicks")],
-    )
-    
+    )    
     def learn_more(n_clicks):
         # If clicked odd times, the instructions will show; else (even times), only the header will show
         if n_clicks is None:
@@ -354,33 +481,6 @@ def demo_callbacks(app):
             )
 
     @app.callback(
-        Output("div-wordemb-controls", "style"), [Input("strategy", "value")]
-    )
-    def show_wordemb_controls(dataset):
-        if dataset in WORD_EMBEDDINGS:
-            return None
-        else:
-            return {"display": "none"}
-
-    @app.callback(
-        Output("dropdown-word-selected", "disabled"),
-        [Input("radio-wordemb-display-mode", "value")],
-    )
-    def disable_word_selection(mode):
-        return not mode == "neighbors"
-
-    @app.callback(
-        Output("dropdown-word-selected", "options"),
-        [Input("strategy", "value")],
-    )
-    def fill_dropdown_word_selection_options(dataset):
-        if dataset in WORD_EMBEDDINGS:
-            return [
-                {"label": i, "value": i} for i in data_dict[dataset].iloc[:, 0].tolist()
-            ]
-        else:
-            return []
-    @app.callback(
         Output("graph-3d-plot-tsne", "figure"),
         [
             Input("strategy", "value"),
@@ -402,59 +502,44 @@ def demo_callbacks(app):
         wordemb_display_mode,
     ):
         if strategy:
-            path = f"demo_embeddings/{dataset}/iterations_{iterations}/perplexity_{perplexity}/pca_{pca_dim}/learning_rate_{learning_rate}"
-
-            try:
-
-                data_url = [
-                    "demo_embeddings",
-                    str(strategy),
-                    "epochs_" + str(epochs),
-                    "perplexity_" + str(perplexity),
-                    "pca_" + str(pca_dim),
-                    "learning_rate_" + str(learning_rate),
-                    "data.csv",
-                ]
-                full_path = PATH.joinpath(*data_url)
-                embedding_df = pd.read_csv(
-                    full_path, index_col=0, encoding="ISO-8859-1"
-                )
-
-            except FileNotFoundError as error:
-                print(
-                    error,
-                    "\nThe dataset was not found. Please generate it using generate_demo_embeddings.py",
-                )
-                return go.Figure()
 
             # Plot layout
             axes = dict(title="", showgrid=True, zeroline=False, showticklabels=False)
 
             layout = go.Layout(
                 margin=dict(l=0, r=0, b=0, t=0),
-                scene=dict(xaxis=axes, yaxis=axes, zaxis=axes),
+                scene=dict(xaxis=axes, yaxis=axes),
             )
 
-            # For Image datasets
-            if strategy in IMAGE_DATASETS:
-                embedding_df["label"] = embedding_df.index
+            global data, train_obj, EMB_HISTORY
+            train_obj = train_model()
+            (X_TOLB, X_NOLB) = data_to_label(strategy)
+            data.update_nolabel(X_NOLB)
+            data.update_tolabel(X_TOLB)
+            # print('x nolb shape {}'.format(data.X_NOLB.shape))
+            train_obj.update_data(data)
+            print('train obj x nolb shape {}'.format(train_obj.data.X_NOLB.shape))        
+            #embeddings = train_obj.get_test_embedding()
+            embeddings_tr = train_obj.get_trained_embedding()
+            # embeddings_nolb = train_obj.get_nolb_embedding()
+            embeddings_tolb = train_obj.get_tolb_embedding()
+            #embeddings = np.concatenate((embeddings_tr, embeddings_nolb), axis=0)
+            embeddings = np.concatenate((embeddings_tr, embeddings_tolb), axis=0)
+            labels = np.concatenate((data.Y.numpy(),
+                                     np.ones(embeddings_tolb.shape[0])*15),
+                                    axis=0)
+            # np.random.seed(42)
+            # reducer = umap.UMAP(random_state=42)
+            umap_embeddings = reducer.fit_transform(embeddings)
+            EMB_HISTORY = (umap_embeddings, labels)
+            print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
+            
+            df = pd.DataFrame(data=umap_embeddings, columns=["dim1", "dim2"])
+            #print(df)
+            df['labels'] = labels
+            groups = df.groupby("labels")
 
-                groups = embedding_df.groupby("label")
-                figure = generate_figure_image(groups, layout)
-
-            # Everything else is word embeddings
-            elif strategy in WORD_EMBEDDINGS:
-                figure = generate_figure_word_vec(
-                    embedding_df=embedding_df,
-                    layout=layout,
-                    wordemb_display_mode=wordemb_display_mode,
-                    selected_word=selected_word,
-                    dataset=strategy,
-                )
-
-            else:
-                figure = go.Figure()
-
+            figure = generate_figure_image(groups, layout)
             return figure
     
     @app.callback(
@@ -471,7 +556,7 @@ def demo_callbacks(app):
     def display_click_image(
         clickData, dataset, iterations, perplexity, pca_dim, learning_rate
     ):
-        if dataset in IMAGE_DATASETS and clickData:
+        if dataset in strategy_names and clickData:
             # Load the same dataset as the one displayed
 
             try:
@@ -497,7 +582,7 @@ def demo_callbacks(app):
 
             # Convert the point clicked into float64 numpy array
             click_point_np = np.array(
-                [clickData["points"][0][i] for i in ["x", "y", "z"]]
+                [clickData["points"][0][i] for i in ["dim1", "dim2"]]
             ).astype(np.float64)
             # Create a boolean mask of the point clicked, truth value exists at only one row
             bool_mask_click = (
@@ -522,68 +607,15 @@ def demo_callbacks(app):
                     style={"height": "25vh", "display": "block", "margin": "auto"},
                 )
         return None
-      
-    @app.callback(
-        Output("div-plot-click-wordemb", "children"),
-        [Input("graph-3d-plot-tsne", "clickData"), Input("strategy", "value")],
-    )
-    def display_click_word_neighbors(clickData, dataset):
-        if dataset in WORD_EMBEDDINGS and clickData:
-            selected_word = clickData["points"][0]["text"]
-
-            try:
-                # Get the nearest neighbors indices using Euclidean distance
-                vector = data_dict[dataset].set_index("0")
-                selected_vec = vector.loc[selected_word]
-
-                def compare_pd(vector):
-                    return spatial_distance.euclidean(vector, selected_vec)
-
-                # vector.apply takes compare_pd function as the first argument
-                distance_map = vector.apply(compare_pd, axis=1)
-                nearest_neighbors = distance_map.sort_values()[1:6]
-
-                trace = go.Bar(
-                    x=nearest_neighbors.values,
-                    y=nearest_neighbors.index,
-                    width=0.5,
-                    orientation="h",
-                    marker=dict(color="rgb(50, 102, 193)"),
-                )
-
-                layout = go.Layout(
-                    title=f'5 nearest neighbors of "{selected_word}"',
-                    xaxis=dict(title="Euclidean Distance"),
-                    margin=go.layout.Margin(l=60, r=60, t=35, b=35),
-                )
-
-                fig = go.Figure(data=[trace], layout=layout)
-
-                return dcc.Graph(
-                    id="graph-bar-nearest-neighbors-word",
-                    figure=fig,
-                    style={"height": "25vh"},
-                    config={"displayModeBar": False},
-                )
-            except KeyError as error:
-                raise PreventUpdate
-        return None
-      
+            
     @app.callback(
         Output("div-plot-click-message", "children"),
         [Input("graph-3d-plot-tsne", "clickData"), Input("strategy", "value")],
     )
     def display_click_message(clickData, dataset):
         # Displays message shown when a point in the graph is clicked, depending whether it's an image or word
-        if dataset in IMAGE_DATASETS:
+        if dataset in strategy_names:
             if clickData:
                 return "Image Selected"
             else:
                 return "Click a data point on the scatter plot to display its corresponding image."
-
-        elif dataset in WORD_EMBEDDINGS:
-            if clickData:
-                return None
-            else:
-                return "Click a word on the plot to see its top 5 neighbors."
-

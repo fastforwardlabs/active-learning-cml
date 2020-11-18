@@ -151,11 +151,28 @@ labels = np.concatenate((data.Y.numpy(),
 umap_embeddings = reducer.fit_transform(embeddings)
 EMB_HISTORY = (umap_embeddings, labels)
 print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
+
+print(type(umap_embeddings))
+
+import pandas as pd
+
+df = pd.DataFrame(data=umap_embeddings, columns=["dim1", "dim2"])
+print(df)
+df['labels'] = labels
+print(df)
+groups = df.groupby("labels")
+groups
+
+for idx, val in groups:
+  print(idx, val)
+  
 '''
 fig = px.scatter(x=umap_embeddings[:, 0], 
                  y=umap_embeddings[:, 1],
                  color=labels)
 fig.show()
+'''
+
 '''
 import matplotlib.pyplot as plt
 colors = ['violet', 'blue', 'red', 'yellow', 'green', 'orange', 'magenta', 'xkcd:lilac', 'xkcd:purplish blue', 'xkcd:light blue', 'xkcd: black', 'xkcd: black', 'xkcd: black', 'xkcd: black', 'xkcd: black', 'xkcd:fuchsia']
@@ -198,3 +215,4 @@ scatter = ax.scatter(x=umap_embeddings[:, 0],
 legend1 = ax.legend(*scatter.legend_elements(),
                     loc="lower left", title="Classes")
 ax.add_artist(legend1)
+'''

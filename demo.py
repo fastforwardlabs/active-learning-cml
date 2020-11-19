@@ -107,7 +107,6 @@ def data_to_label(strategy):
         X_TOLB, X_NOLB = sample.entropy_dropout(10, 5)
     return (X_TOLB, X_NOLB)
 
-
 def numpy_to_b64(array, scalar=True):
     # Convert from 0-1 to 0-255
     if scalar:
@@ -121,7 +120,7 @@ def numpy_to_b64(array, scalar=True):
     im_pil.save(buff, format="png")
     im_b64 = base64.b64encode(buff.getvalue()).decode("utf-8")
 
-    return "data:image/png;base64," + im_b64
+    return im_b64
 
 
 def create_img(arr, shape=(28, 28)):
@@ -304,6 +303,9 @@ def create_layout(app):
                                         marks={i: str(i) for i in [10, 50, 100, 200]},
                                     ),
                                     html.Div(
+                                        html.Button(id="train", children=["Train"])
+                                    ),
+                                    html.Div(
                                         id="div-wordemb-controls",
                                         style={"display": "none"},
                                         children=[
@@ -336,7 +338,10 @@ def create_layout(app):
                     html.Div(
                         className="six columns",
                         children=[
-                            dcc.Graph(id="graph-3d-plot-tsne", style={"height": "98vh"})
+                            dcc.Graph(id="graph-3d-plot-tsne", 
+                                      #style={"height": "98vh"}
+                                      style={"height": 700}
+                                     )
                         ],
                     ),
                     html.Div(
@@ -355,7 +360,7 @@ def create_layout(app):
                                         },
                                     ),
                                     html.Div(id="div-plot-click-image"),
-                                    html.Div(id="div-plot-click-wordemb"),
+                                    
                                 ],
                             )
                         ],
@@ -366,20 +371,6 @@ def create_layout(app):
     )
   
 def demo_callbacks(app):
-    '''
-    def generate_figure_image(umap_embeddings, labels, layout):
-        scatter = go.Scatter(
-          x=umap_embeddings[:, 0],
-          y=umap_embeddings[:, 1],
-          text=[labels for _ in range(umap_embeddings[:, 0].shape[0])],
-          textposition="top center",
-          mode="markers",
-          marker=dict(size=3, symbol="circle")
-        )
-        figure = go.Figure(data=scatter, layout=layout)
-        
-        return figure
-    '''
     def generate_figure_image(groups, layout):
         data = []
 
@@ -391,7 +382,7 @@ def demo_callbacks(app):
                 text=[idx for _ in range(val["dim1"].shape[0])],
                 textposition="top center",
                 mode="markers",
-                marker=dict(size=3, symbol="circle"),
+                marker=dict(size=5, symbol="circle"),
             )
             data.append(scatter)
 
@@ -399,56 +390,6 @@ def demo_callbacks(app):
 
         return figure
     
-    # Scatter Plot of the t-SNE datasets
-    def generate_figure_word_vec(
-        embedding_df, layout, wordemb_display_mode, selected_word, dataset
-    ):
-
-        try:
-            # Regular displays the full scatter plot with only circles
-            if wordemb_display_mode == "regular":
-                plot_mode = "markers"
-
-            # Nearest Neighbors displays only the 200 nearest neighbors of the selected_word, in text rather than circles
-            elif wordemb_display_mode == "neighbors":
-                if not selected_word:
-                    return go.Figure()
-
-                plot_mode = "text"
-
-                # Get the nearest neighbors indices using Euclidean distance
-                vector = data_dict[dataset].set_index("0")
-                selected_vec = vector.loc[selected_word]
-
-                def compare_pd(vector):
-                    return spatial_distance.euclidean(vector, selected_vec)
-
-                # vector.apply takes compare_pd function as the first argument
-                distance_map = vector.apply(compare_pd, axis=1)
-                neighbors_idx = distance_map.sort_values()[:100].index
-
-                # Select those neighbors from the embedding_df
-                embedding_df = embedding_df.loc[neighbors_idx]
-
-            scatter = go.Scatter3d(
-                name=str(embedding_df.index),
-                x=embedding_df["x"],
-                y=embedding_df["y"],
-                z=embedding_df["z"],
-                text=embedding_df.index,
-                textposition="middle center",
-                showlegend=False,
-                mode=plot_mode,
-                marker=dict(size=3, color="#3266c1", symbol="circle"),
-            )
-
-            figure = go.Figure(data=[scatter], layout=layout)
-
-            return figure
-        except KeyError as error:
-            print(error)
-            raise PreventUpdate
-
     # Callback function for the learn-more button
     @app.callback(
         [
@@ -479,7 +420,71 @@ def demo_callbacks(app):
                 ),
                 "Learn More",
             )
+    '''
+    @app.callback(
+        Output("graph-3d-plot-tsne", "figure"),
+        [
+            Input("strategy", "value"),
+            Input("train", "n_clicks"),
+        ],
+    )
+    def train_display_3d_scatter_plot(strategy, n_clicks):
+        if n_clicks >= 1:
 
+            # Plot layout
+            axes = dict(title="", showgrid=True, zeroline=False, showticklabels=False)
+
+            
+            layout = go.Layout(
+                showlegend=True,
+                margin=dict(l=40, r=40, t=40, b=40),
+                xaxis = dict(autorange=True,
+                             showgrid=False,
+                             showline=False,
+                             ticks='',
+                             showticklabels=False),
+                yaxis = dict(autorange=True,
+                             showgrid=False,
+                             showline=False,
+                             ticks='',
+                             showticklabels=False))
+
+            global data, train_obj, EMB_HISTORY, embedding_df, orig_x
+            train_obj = train_model()
+            (X_TOLB, X_NOLB) = data_to_label(strategy)
+            data.update_nolabel(X_NOLB)
+            data.update_tolabel(X_TOLB)
+            # print('x nolb shape {}'.format(data.X_NOLB.shape))
+            train_obj.update_data(data)
+            print('train obj x nolb shape {}'.format(train_obj.data.X_NOLB.shape))        
+            #embeddings = train_obj.get_test_embedding()
+            embeddings_tr = train_obj.get_trained_embedding()
+            # embeddings_nolb = train_obj.get_nolb_embedding()
+            embeddings_tolb = train_obj.get_tolb_embedding()
+            #embeddings = np.concatenate((embeddings_tr, embeddings_nolb), axis=0)
+            embeddings = np.concatenate((embeddings_tr, embeddings_tolb), axis=0)
+            labels = np.concatenate((data.Y.numpy(),
+                                     np.ones(embeddings_tolb.shape[0])*15),
+                                    axis=0)
+            labels_text = [str(int(item)) for item in labels]
+            labels_text = ["to label" if x == "15" else x for x in labels_text]
+            
+            orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)
+            # np.random.seed(42)
+            # reducer = umap.UMAP(random_state=42)
+            umap_embeddings = reducer.fit_transform(embeddings)
+            EMB_HISTORY = (umap_embeddings, labels)
+            print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
+            
+            embedding_df = pd.DataFrame(data=umap_embeddings, columns=["dim1", "dim2"])
+            #print(df)
+            embedding_df['labels'] = labels_text
+            groups = embedding_df.groupby("labels")
+
+            figure = generate_figure_image(groups, layout)
+            return figure
+      
+    '''
     @app.callback(
         Output("graph-3d-plot-tsne", "figure"),
         [
@@ -506,12 +511,25 @@ def demo_callbacks(app):
             # Plot layout
             axes = dict(title="", showgrid=True, zeroline=False, showticklabels=False)
 
+            
             layout = go.Layout(
-                margin=dict(l=0, r=0, b=0, t=0),
-                scene=dict(xaxis=axes, yaxis=axes),
+                showlegend=True,
+                margin=dict(l=40, r=40, t=40, b=40),
+                xaxis = dict(autorange=True,
+                             showgrid=False,
+                             showline=False,
+                             ticks='',
+                             showticklabels=False),
+                yaxis = dict(autorange=True,
+                             showgrid=False,
+                             showline=False,
+                             ticks='',
+                             showticklabels=False)
+                #margin=dict(l=0, r=0, b=0, t=0),
+                #scene=dict(xaxis=axes, yaxis=axes),
             )
 
-            global data, train_obj, EMB_HISTORY
+            global data, train_obj, EMB_HISTORY, embedding_df, orig_x
             train_obj = train_model()
             (X_TOLB, X_NOLB) = data_to_label(strategy)
             data.update_nolabel(X_NOLB)
@@ -528,16 +546,20 @@ def demo_callbacks(app):
             labels = np.concatenate((data.Y.numpy(),
                                      np.ones(embeddings_tolb.shape[0])*15),
                                     axis=0)
+            labels_text = [str(int(item)) for item in labels]
+            labels_text = ["to label" if x == "15" else x for x in labels_text]
+            
+            orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)
             # np.random.seed(42)
             # reducer = umap.UMAP(random_state=42)
             umap_embeddings = reducer.fit_transform(embeddings)
             EMB_HISTORY = (umap_embeddings, labels)
             print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
             
-            df = pd.DataFrame(data=umap_embeddings, columns=["dim1", "dim2"])
+            embedding_df = pd.DataFrame(data=umap_embeddings, columns=["dim1", "dim2"])
             #print(df)
-            df['labels'] = labels
-            groups = df.groupby("labels")
+            embedding_df['labels'] = labels_text
+            groups = embedding_df.groupby("labels")
 
             figure = generate_figure_image(groups, layout)
             return figure
@@ -554,11 +576,12 @@ def demo_callbacks(app):
         ],
     )
     def display_click_image(
-        clickData, dataset, iterations, perplexity, pca_dim, learning_rate
+        clickData, strategy, iterations, perplexity, pca_dim, learning_rate
     ):
-        if dataset in strategy_names and clickData:
+        print("its here")
+        if clickData:
             # Load the same dataset as the one displayed
-
+            '''
             try:
                 data_url = [
                     "demo_embeddings",
@@ -579,25 +602,25 @@ def demo_callbacks(app):
                     "\nThe dataset was not found. Please generate it using generate_demo_embeddings.py",
                 )
                 return
-
+            '''
             # Convert the point clicked into float64 numpy array
             click_point_np = np.array(
                 [clickData["points"][0][i] for i in ["dim1", "dim2"]]
             ).astype(np.float64)
+            print(click_point_np)
             # Create a boolean mask of the point clicked, truth value exists at only one row
             bool_mask_click = (
-                embedding_df.loc[:, "x":"z"].eq(click_point_np).all(axis=1)
+                embedding_df.loc[:, "dim1":"dim2"].eq(click_point_np).all(axis=1)
             )
+            print(bool_mask_click)
             # Retrieve the index of the point clicked, given it is present in the set
             if bool_mask_click.any():
                 clicked_idx = embedding_df[bool_mask_click].index[0]
 
                 # Retrieve the image corresponding to the index
-                image_vector = data_dict[dataset].iloc[clicked_idx]
-                if dataset == "cifar_gray_3000":
-                    image_np = image_vector.values.reshape(32, 32).astype(np.float64)
-                else:
-                    image_np = image_vector.values.reshape(28, 28).astype(np.float64)
+                #image_vector = data_dict[dataset].iloc[clicked_idx]
+                image_vector = orig_x.iloc[clicked_idx]
+                image_np = image_vector.values.reshape(28, 28).astype(np.float64)
 
                 # Encode image into base 64
                 image_b64 = numpy_to_b64(image_np)
@@ -612,10 +635,40 @@ def demo_callbacks(app):
         Output("div-plot-click-message", "children"),
         [Input("graph-3d-plot-tsne", "clickData"), Input("strategy", "value")],
     )
-    def display_click_message(clickData, dataset):
+    def display_click_message(clickData, strategy):
         # Displays message shown when a point in the graph is clicked, depending whether it's an image or word
-        if dataset in strategy_names:
+        if strategy in strategy_names:
             if clickData:
+                print(clickData)
+                # Convert the point clicked into float64 numpy array
+                click_point_np = np.array(
+                    [clickData["points"][0][i] for i in ["x", "y"]]
+                ).astype(np.float64)
+                print(click_point_np)
+                # Create a boolean mask of the point clicked, truth value exists at only one row
+                bool_mask_click = (
+                    embedding_df.loc[:, "dim1":"dim2"].eq(click_point_np).all(axis=1)
+                )
+                print(bool_mask_click)
+                # Retrieve the index of the point clicked, given it is present in the set
+                if bool_mask_click.any():
+                    clicked_idx = embedding_df[bool_mask_click].index[0]
+
+                    # Retrieve the image corresponding to the index
+                    #image_vector = data_dict[dataset].iloc[clicked_idx]
+                    image_vector = orig_x[clicked_idx]
+                    print(image_vector.shape)
+                    image_np = image_vector.reshape(28, 28).astype(np.float64)
+
+                    # Encode image into base 64
+                    image_b64 = numpy_to_b64(image_np)
+                    print(image_b64)
+                    return html.Img(
+                        #src="data:image/png;base64, " + image_b64,
+                        src='data:image/png;base64,{}'.format(image_b64),
+                        style={"height": "25vh", "display": "block", "margin": "auto"},
+                    )
+
                 return "Image Selected"
             else:
                 return "Click a data point on the scatter plot to display its corresponding image."

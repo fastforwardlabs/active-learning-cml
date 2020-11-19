@@ -146,6 +146,7 @@ embeddings = np.concatenate((embeddings_tr, embeddings_tolb), axis=0)
 labels = np.concatenate((data.Y.numpy(),
                          np.ones(embeddings_tolb.shape[0])*15),
                         axis=0)
+
 # np.random.seed(42)
 # reducer = umap.UMAP(random_state=42)
 umap_embeddings = reducer.fit_transform(embeddings)
@@ -153,19 +154,31 @@ EMB_HISTORY = (umap_embeddings, labels)
 print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
 
 print(type(umap_embeddings))
+labels_text = [str(int(item)) for item in labels]
+labels_text = ["to label" if x == "15" else x for x in labels_text]
 
 import pandas as pd
 
 df = pd.DataFrame(data=umap_embeddings, columns=["dim1", "dim2"])
 print(df)
-df['labels'] = labels
+df['labels'] = labels_text
 print(df)
 groups = df.groupby("labels")
 groups
 
 for idx, val in groups:
   print(idx, val)
-  
+
+orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)
+print(orig_x.shape)
+
+df_x = pd.DataFrame(data=orig_x, columns=["x"])
+print(df_x)
+
+
+
+
+
 '''
 fig = px.scatter(x=umap_embeddings[:, 0], 
                  y=umap_embeddings[:, 1],

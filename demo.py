@@ -420,71 +420,7 @@ def demo_callbacks(app):
                 ),
                 "Learn More",
             )
-    '''
-    @app.callback(
-        Output("graph-3d-plot-tsne", "figure"),
-        [
-            Input("strategy", "value"),
-            Input("train", "n_clicks"),
-        ],
-    )
-    def train_display_3d_scatter_plot(strategy, n_clicks):
-        if n_clicks >= 1:
-
-            # Plot layout
-            axes = dict(title="", showgrid=True, zeroline=False, showticklabels=False)
-
-            
-            layout = go.Layout(
-                showlegend=True,
-                margin=dict(l=40, r=40, t=40, b=40),
-                xaxis = dict(autorange=True,
-                             showgrid=False,
-                             showline=False,
-                             ticks='',
-                             showticklabels=False),
-                yaxis = dict(autorange=True,
-                             showgrid=False,
-                             showline=False,
-                             ticks='',
-                             showticklabels=False))
-
-            global data, train_obj, EMB_HISTORY, embedding_df, orig_x
-            train_obj = train_model()
-            (X_TOLB, X_NOLB) = data_to_label(strategy)
-            data.update_nolabel(X_NOLB)
-            data.update_tolabel(X_TOLB)
-            # print('x nolb shape {}'.format(data.X_NOLB.shape))
-            train_obj.update_data(data)
-            print('train obj x nolb shape {}'.format(train_obj.data.X_NOLB.shape))        
-            #embeddings = train_obj.get_test_embedding()
-            embeddings_tr = train_obj.get_trained_embedding()
-            # embeddings_nolb = train_obj.get_nolb_embedding()
-            embeddings_tolb = train_obj.get_tolb_embedding()
-            #embeddings = np.concatenate((embeddings_tr, embeddings_nolb), axis=0)
-            embeddings = np.concatenate((embeddings_tr, embeddings_tolb), axis=0)
-            labels = np.concatenate((data.Y.numpy(),
-                                     np.ones(embeddings_tolb.shape[0])*15),
-                                    axis=0)
-            labels_text = [str(int(item)) for item in labels]
-            labels_text = ["to label" if x == "15" else x for x in labels_text]
-            
-            orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)
-            # np.random.seed(42)
-            # reducer = umap.UMAP(random_state=42)
-            umap_embeddings = reducer.fit_transform(embeddings)
-            EMB_HISTORY = (umap_embeddings, labels)
-            print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
-            
-            embedding_df = pd.DataFrame(data=umap_embeddings, columns=["dim1", "dim2"])
-            #print(df)
-            embedding_df['labels'] = labels_text
-            groups = embedding_df.groupby("labels")
-
-            figure = generate_figure_image(groups, layout)
-            return figure
-      
-    '''
+          
     @app.callback(
         Output("graph-3d-plot-tsne", "figure"),
         [
@@ -583,127 +519,16 @@ def demo_callbacks(app):
 
             figure = generate_figure_image(groups, layout)
             return figure
-          
-            '''
-            global data, train_obj, EMB_HISTORY, embedding_df, orig_x
-            train_obj = train_model()
-            (X_TOLB, X_NOLB) = data_to_label(strategy)
-            data.update_nolabel(X_NOLB)
-            data.update_tolabel(X_TOLB)
-            # print('x nolb shape {}'.format(data.X_NOLB.shape))
-            train_obj.update_data(data)
-            print('train obj x nolb shape {}'.format(train_obj.data.X_NOLB.shape))        
-            #embeddings = train_obj.get_test_embedding()
-            embeddings_tr = train_obj.get_trained_embedding()
-            # embeddings_nolb = train_obj.get_nolb_embedding()
-            embeddings_tolb = train_obj.get_tolb_embedding()
-            #embeddings = np.concatenate((embeddings_tr, embeddings_nolb), axis=0)
-            embeddings = np.concatenate((embeddings_tr, embeddings_tolb), axis=0)
-            labels = np.concatenate((data.Y.numpy(),
-                                     np.ones(embeddings_tolb.shape[0])*15),
-                                    axis=0)
-            labels_text = [str(int(item)) for item in labels]
-            labels_text = ["to label" if x == "15" else x for x in labels_text]
-            
-            orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)
-            # np.random.seed(42)
-            # reducer = umap.UMAP(random_state=42)
-            umap_embeddings = reducer.fit_transform(embeddings)
-            EMB_HISTORY = (umap_embeddings, labels)
-            print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
-            
-            embedding_df = pd.DataFrame(data=umap_embeddings, columns=["dim1", "dim2"])
-            #print(df)
-            embedding_df['labels'] = labels_text
-            groups = embedding_df.groupby("labels")
-
-            figure = generate_figure_image(groups, layout)
-            return figure
-            '''
-    
+              
     @app.callback(
         Output("div-plot-click-image", "children"),
         [
             Input("graph-3d-plot-tsne", "clickData"),
-            Input("strategy", "value"),
-            Input("slider-iterations", "value"),
-            Input("slider-perplexity", "value"),
-            Input("slider-pca-dimension", "value"),
-            Input("slider-learning-rate", "value"),
-        ],
-    )
-    def display_click_image(
-        clickData, strategy, iterations, perplexity, pca_dim, learning_rate
-    ):
-        print("its here")
-        if clickData:
-            # Load the same dataset as the one displayed
-            '''
-            try:
-                data_url = [
-                    "demo_embeddings",
-                    str(dataset),
-                    "iterations_" + str(iterations),
-                    "perplexity_" + str(perplexity),
-                    "pca_" + str(pca_dim),
-                    "learning_rate_" + str(learning_rate),
-                    "data.csv",
-                ]
-
-                full_path = PATH.joinpath(*data_url)
-                embedding_df = pd.read_csv(full_path, encoding="ISO-8859-1")
-
-            except FileNotFoundError as error:
-                print(
-                    error,
-                    "\nThe dataset was not found. Please generate it using generate_demo_embeddings.py",
-                )
-                return
-            '''
-            # Convert the point clicked into float64 numpy array
-            click_point_np = np.array(
-                [clickData["points"][0][i] for i in ["dim1", "dim2"]]
-            ).astype(np.float64)
-            print(click_point_np)
-            # Create a boolean mask of the point clicked, truth value exists at only one row
-            bool_mask_click = (
-                embedding_df.loc[:, "dim1":"dim2"].eq(click_point_np).all(axis=1)
-            )
-            print(bool_mask_click)
-            # Retrieve the index of the point clicked, given it is present in the set
-            if bool_mask_click.any():
-                if EMB_HISTORY is not None:
-                    umap_embeddings = EMB_HISTORY[0]
-                else:
-                    umap_embeddings = x_random
-                    
-            
-                clicked_idx = umap_embeddings[bool_mask_click].index[0]
-
-                # Retrieve the image corresponding to the index
-                #image_vector = data_dict[dataset].iloc[clicked_idx]
-                image_vector = orig_x.iloc[clicked_idx]
-                image_np = image_vector.values.reshape(28, 28).astype(np.float64)
-
-                # Encode image into base 64
-                image_b64 = numpy_to_b64(image_np)
-
-                return html.Img(
-                    src="data:image/png;base64, " + image_b64,
-                    style={"height": "25vh", "display": "block", "margin": "auto"},
-                )
-        return None
-            
-    @app.callback(
-        Output("div-plot-click-message", "children"),
-        [
-            Input("graph-3d-plot-tsne", "clickData"), 
             Input("strategy", "value")
         ],
     )
-    def display_click_message(clickData, strategy):
-        # Displays message shown when a point in the graph is clicked, depending whether it's an image or word
-        
+    def display_click_image(clickData, strategy):
+        print("its div-plot-click-image")
         if clickData:
             print(clickData)
             # Convert the point clicked into float64 numpy array
@@ -715,7 +540,7 @@ def demo_callbacks(app):
             clicked_idx = None
             if EMB_HISTORY is not None:
                 umap_embeddings = EMB_HISTORY[0]
-                print(umap_embeddings)
+                #print(umap_embeddings)
                 '''
                 # Create a boolean mask of the point clicked, truth value exists at only one row
                 bool_mask_click = (
@@ -749,7 +574,19 @@ def demo_callbacks(app):
                 src='data:image/png;base64,{}'.format(image_b64),
                 style={"height": "25vh", "display": "block", "margin": "auto"},
             )
-
+        return None
+            
+    @app.callback(
+        Output("div-plot-click-message", "children"),
+        [
+            Input("graph-3d-plot-tsne", "clickData"), 
+            Input("strategy", "value")
+        ],
+    )
+    def display_click_message(clickData, strategy):
+        # Displays message shown when a point in the graph is clicked, depending whether it's an image or word
+        
+        if clickData:
             return "Image Selected"
         else:
             return "Click a data point on the scatter plot to display its corresponding image."

@@ -489,22 +489,12 @@ def demo_callbacks(app):
         Output("graph-3d-plot-tsne", "figure"),
         [
             Input("strategy", "value"),
-            Input("slider-epochs", "value"),
-            Input("slider-perplexity", "value"),
-            Input("slider-pca-dimension", "value"),
-            Input("slider-learning-rate", "value"),
-            Input("dropdown-word-selected", "value"),
-            Input("radio-wordemb-display-mode", "value"),
+            Input("train", "n_clicks"),
         ],
     )
     def display_3d_scatter_plot(
         strategy,
-        epochs,
-        perplexity,
-        pca_dim,
-        learning_rate,
-        selected_word,
-        wordemb_display_mode,
+        n_clicks,
     ):
         if strategy:
 
@@ -528,7 +518,73 @@ def demo_callbacks(app):
                 #margin=dict(l=0, r=0, b=0, t=0),
                 #scene=dict(xaxis=axes, yaxis=axes),
             )
+            global data, train_obj, EMB_HISTORY, orig_x, umap_embeddings_random
+            orig_x = data.X.numpy()
+            
+            print(n_clicks)
+            if n_clicks is not None:  
+                if n_clicks == 1:
+                    train_obj = train_model()
+                    (X_TOLB, X_NOLB) = data_to_label(strategy)
+                    data.update_nolabel(X_NOLB)
+                    data.update_tolabel(X_TOLB)
+                    # print('x nolb shape {}'.format(data.X_NOLB.shape))
+                    train_obj.update_data(data)
+                    print('train obj x nolb shape {}'.format(train_obj.data.X_NOLB.shape))        
+                    #embeddings = train_obj.get_test_embedding()
+                    embeddings_tr = train_obj.get_trained_embedding()
+                    # embeddings_nolb = train_obj.get_nolb_embedding()
+                    embeddings_tolb = train_obj.get_tolb_embedding()
+                    #embeddings = np.concatenate((embeddings_tr, embeddings_nolb), axis=0)
+                    embeddings = np.concatenate((embeddings_tr, embeddings_tolb), axis=0)
+                    labels = np.concatenate((data.Y.numpy(),
+                                         np.ones(embeddings_tolb.shape[0])*15),
+                                        axis=0)
+                    labels_text = [str(int(item)) for item in labels]
+                    labels_text = ["to label" if x == "15" else x for x in labels_text]
+            
+                    orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)
+                    umap_embeddings = reducer.fit_transform(embeddings)
+                    EMB_HISTORY = (umap_embeddings, labels)
+                    print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
+              
+                elif n_clicks > 1:
+                    umap_embeddings = EMB_HISTORY[0]
+                    labels = EMB_HISTORY[1]
+                    print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
+                    labels_text = [str(int(item)) for item in labels]
+                    labels_text = ["to label" if x == "15" else x for x in labels_text]
+              
+            else: 
+                
+                if EMB_HISTORY is not None:
+                    print("it is in else emb_history")
+                    umap_embeddings = EMB_HISTORY[0]
+                    labels = EMB_HISTORY[1]
+                    print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
+                    labels_text = [str(int(item)) for item in labels]
+                    labels_text = ["to label" if x == "15" else x for x in labels_text]
+                
+                else:
+                    
+                    x = np.random.rand(1000).reshape(1000, 1)
+                    y = np.random.rand(1000).reshape(1000, 1)
+                    umap_embeddings = np.concatenate((x, y), axis=1)
+                    umap_embeddings_random = umap_embeddings
+                    labels = data.Y.numpy()
+                    labels_text = [str(int(item)) for item in labels]
+                    #labels_text = ["to label" if x == "15" else x for x in labels_text]
+                
 
+            embedding_df = pd.DataFrame(data=umap_embeddings, columns=["dim1", "dim2"])
+            #print(df)
+            embedding_df['labels'] = labels_text
+            groups = embedding_df.groupby("labels")
+
+            figure = generate_figure_image(groups, layout)
+            return figure
+          
+            '''
             global data, train_obj, EMB_HISTORY, embedding_df, orig_x
             train_obj = train_model()
             (X_TOLB, X_NOLB) = data_to_label(strategy)
@@ -563,6 +619,7 @@ def demo_callbacks(app):
 
             figure = generate_figure_image(groups, layout)
             return figure
+            '''
     
     @app.callback(
         Output("div-plot-click-image", "children"),
@@ -615,7 +672,13 @@ def demo_callbacks(app):
             print(bool_mask_click)
             # Retrieve the index of the point clicked, given it is present in the set
             if bool_mask_click.any():
-                clicked_idx = embedding_df[bool_mask_click].index[0]
+                if EMB_HISTORY is not None:
+                    umap_embeddings = EMB_HISTORY[0]
+                else:
+                    umap_embeddings = x_random
+                    
+            
+                clicked_idx = umap_embeddings[bool_mask_click].index[0]
 
                 # Retrieve the image corresponding to the index
                 #image_vector = data_dict[dataset].iloc[clicked_idx]
@@ -633,42 +696,60 @@ def demo_callbacks(app):
             
     @app.callback(
         Output("div-plot-click-message", "children"),
-        [Input("graph-3d-plot-tsne", "clickData"), Input("strategy", "value")],
+        [
+            Input("graph-3d-plot-tsne", "clickData"), 
+            Input("strategy", "value")
+        ],
     )
     def display_click_message(clickData, strategy):
         # Displays message shown when a point in the graph is clicked, depending whether it's an image or word
-        if strategy in strategy_names:
-            if clickData:
-                print(clickData)
-                # Convert the point clicked into float64 numpy array
-                click_point_np = np.array(
-                    [clickData["points"][0][i] for i in ["x", "y"]]
-                ).astype(np.float64)
-                print(click_point_np)
+        
+        if clickData:
+            print(clickData)
+            # Convert the point clicked into float64 numpy array
+            click_point_np = np.array(
+                [clickData["points"][0][i] for i in ["x", "y"]]
+            ).astype(np.float64)
+            print(click_point_np)
+                
+            clicked_idx = None
+            if EMB_HISTORY is not None:
+                umap_embeddings = EMB_HISTORY[0]
+                print(umap_embeddings)
+                '''
                 # Create a boolean mask of the point clicked, truth value exists at only one row
                 bool_mask_click = (
-                    embedding_df.loc[:, "dim1":"dim2"].eq(click_point_np).all(axis=1)
+                    umap_embeddings.loc[:, "dim1":"dim2"].eq(click_point_np).all(axis=1)
                 )
+                clicked_idx = umap_embeddings[bool_mask_click].index[0]
                 print(bool_mask_click)
-                # Retrieve the index of the point clicked, given it is present in the set
-                if bool_mask_click.any():
-                    clicked_idx = embedding_df[bool_mask_click].index[0]
-
-                    # Retrieve the image corresponding to the index
-                    #image_vector = data_dict[dataset].iloc[clicked_idx]
-                    image_vector = orig_x[clicked_idx]
-                    print(image_vector.shape)
-                    image_np = image_vector.reshape(28, 28).astype(np.float64)
-
-                    # Encode image into base 64
-                    image_b64 = numpy_to_b64(image_np)
-                    print(image_b64)
-                    return html.Img(
-                        #src="data:image/png;base64, " + image_b64,
-                        src='data:image/png;base64,{}'.format(image_b64),
-                        style={"height": "25vh", "display": "block", "margin": "auto"},
-                    )
-
-                return "Image Selected"
+                '''
+                clicked_idx = np.where((umap_embeddings == (click_point_np)).all(axis=1))[0][0]
+                print(clicked_idx)
             else:
-                return "Click a data point on the scatter plot to display its corresponding image."
+                umap_embeddings = umap_embeddings_random
+                clicked_idx = np.where((umap_embeddings == (click_point_np)).all(axis=1))[0][0]
+                print(clicked_idx)
+                
+            # Retrieve the index of the point clicked, given it is present in the set
+            # if bool_mask_click.any():
+            # if clicked_idx is not None:    
+
+            # Retrieve the image corresponding to the index
+            #image_vector = data_dict[dataset].iloc[clicked_idx]
+            image_vector = orig_x[clicked_idx]
+            #print(image_vector.shape)
+            image_np = image_vector.reshape(28, 28).astype(np.float64)
+
+            # Encode image into base 64
+            image_b64 = numpy_to_b64(image_np)
+                    
+            return html.Img(
+                #src="data:image/png;base64, " + image_b64,
+                src='data:image/png;base64,{}'.format(image_b64),
+                style={"height": "25vh", "display": "block", "margin": "auto"},
+            )
+
+            return "Image Selected"
+        else:
+            return "Click a data point on the scatter plot to display its corresponding image."

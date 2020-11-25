@@ -172,12 +172,40 @@ for idx, val in groups:
 orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)
 print(orig_x.shape)
 
-df_x = pd.DataFrame(data=orig_x, columns=["x"])
-print(df_x)
+data.X.shape
 
+image = data.X_TOLB[4].numpy()
+image.shape
+data.X_TOLB.numpy().shape
+(data.X_TOLB.numpy() == image).all((1,2))
+np.where((data.X_TOLB.numpy() == image).all((1,2)))
+idx = np.where((data.X_TOLB.numpy() == image).all((1,2)))[0][0]
+data.X_TOLB[idx].shape
 
+X = torch.cat([data.X, data.X_TOLB[idx].reshape(1, data.X_TOLB[idx].shape[0], data.X_TOLB[idx].shape[1])], dim=0)
+X.shape
+data.X_TOLB[idx].shape[0]
 
+np.where((data.X_TOLB.numpy() == image))
+(data.X_TOLB.numpy() == image).all(axis=1)
 
+myData1 = np.array([[1,2,3],[4,5,6],[7,8,9]])
+np.where((myData1 == [4,5,6]).all(axis=1))
+
+myData = np.array([[[1,2,3],[4,5,6]], 
+                   [[4,5,6],[7,8,9]], 
+                   [[7,8,9],[10,11,12]], 
+                   [[10,11,12],[13,14,15]]
+                  ])
+np.where((myData == ([[4,5,6],[7,8,9]])).all(axis=(1)))[0][0]
+np.where((myData == ([[4,5,6],[7,8,9]])).all(axis=(1,2)))[0]
+myData.shape
+myData2 = np.array([1,2,3,4,5,6])
+np.where((myData2 == 5))
+
+x = myData2[2].reshape(1,)
+x.shape
+x
 
 '''
 fig = px.scatter(x=umap_embeddings[:, 0], 

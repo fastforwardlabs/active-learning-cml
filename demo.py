@@ -8,7 +8,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 from PIL import Image
 from io import BytesIO
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
 import pandas as pd
@@ -360,7 +360,42 @@ def create_layout(app):
                                         },
                                     ),
                                     html.Div(id="div-plot-click-image"),
-                                    
+                                    html.Div(
+                                        id="div-label-controls",
+                                        #style={"display": "none"},
+                                        style={"visibility": "hidden"},
+                                        children=[
+                                            dcc.Input(
+                                                id="input1", 
+                                                type="number", 
+                                                min=0, max=9, 
+                                                step=1, 
+                                                placeholder="enter label",
+                                                style={
+                                                    "size": "120",
+                                                    "text-align": "center",
+                                                    "margin-top": "5px",
+                                                    "margin-left": "50px",
+                                                    "margin-right": "5px", 
+                                                    "margin-bottom": "10px",
+                                                    "font-weight": "bold",
+                                                },
+                                            ),
+                                            html.Button(
+                                                id="submit-button", 
+                                                children=["Submit"],
+                                                style={
+                                                    "text-align": "center",
+                                                    "margin-top": "5px",
+                                                    "margin-left": "10px",
+                                                    "margin-right": "5px", 
+                                                    "margin-bottom": "10px",
+                                                    "font-weight": "bold",
+                                                },
+                                            ),
+                                        ],
+                                    ),
+                                    html.Div(id="number-output")
                                 ],
                             )
                         ],
@@ -454,12 +489,12 @@ def demo_callbacks(app):
                 #margin=dict(l=0, r=0, b=0, t=0),
                 #scene=dict(xaxis=axes, yaxis=axes),
             )
-            global data, train_obj, EMB_HISTORY, orig_x, umap_embeddings_random
+            global data, train_obj, EMB_HISTORY, orig_x, umap_embeddings_random, labels_text
             orig_x = data.X.numpy()
             
             print(n_clicks)
             if n_clicks is not None:  
-                if n_clicks == 1:
+                if n_clicks >= 1:
                     train_obj = train_model()
                     (X_TOLB, X_NOLB) = data_to_label(strategy)
                     data.update_nolabel(X_NOLB)
@@ -483,14 +518,14 @@ def demo_callbacks(app):
                     umap_embeddings = reducer.fit_transform(embeddings)
                     EMB_HISTORY = (umap_embeddings, labels)
                     print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
-              
+                '''
                 elif n_clicks > 1:
                     umap_embeddings = EMB_HISTORY[0]
                     labels = EMB_HISTORY[1]
                     print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
                     labels_text = [str(int(item)) for item in labels]
                     labels_text = ["to label" if x == "15" else x for x in labels_text]
-              
+                '''
             else: 
                 
                 if EMB_HISTORY is not None:
@@ -521,14 +556,18 @@ def demo_callbacks(app):
             return figure
               
     @app.callback(
-        Output("div-plot-click-image", "children"),
+        [
+            Output("div-plot-click-image", "children"),
+            Output("div-label-controls", "children"),
+        ],
         [
             Input("graph-3d-plot-tsne", "clickData"),
-            Input("strategy", "value")
+            Input("strategy", "value"),
         ],
     )
     def display_click_image(clickData, strategy):
         print("its div-plot-click-image")
+        global X_tolb_index
         if clickData:
             print(clickData)
             # Convert the point clicked into float64 numpy array
@@ -550,6 +589,7 @@ def demo_callbacks(app):
                 print(bool_mask_click)
                 '''
                 clicked_idx = np.where((umap_embeddings == (click_point_np)).all(axis=1))[0][0]
+                
                 print(clicked_idx)
             else:
                 umap_embeddings = umap_embeddings_random
@@ -563,18 +603,107 @@ def demo_callbacks(app):
             # Retrieve the image corresponding to the index
             #image_vector = data_dict[dataset].iloc[clicked_idx]
             image_vector = orig_x[clicked_idx]
-            #print(image_vector.shape)
+            #print(type(data.X_TOLB))
+            X_tolb_index = None
+            if labels_text[clicked_idx] == "to label":
+                X_tolb_index = np.where((data.X_TOLB.numpy() == image_vector).all((1,2)))[0][0]
+                print("X_tolb_index: ", X_tolb_index)
             image_np = image_vector.reshape(28, 28).astype(np.float64)
 
             # Encode image into base 64
             image_b64 = numpy_to_b64(image_np)
-                    
-            return html.Img(
-                #src="data:image/png;base64, " + image_b64,
-                src='data:image/png;base64,{}'.format(image_b64),
-                style={"height": "25vh", "display": "block", "margin": "auto"},
-            )
-        return None
+            print(labels_text[clicked_idx])
+            if labels_text[clicked_idx] == "to label":
+                print("within to label")
+                return(
+                    html.Div(
+                        #id="div-plot-click-image",
+                        html.Img(
+                            src='data:image/png;base64,{}'.format(image_b64),
+                            style={"height": "25vh", "display": "block", "margin": "auto"},
+                        )
+                    ),
+                    html.Div(
+                        #id="div-label-controls",
+                        #style={"display": "block"},
+                        style={"visibility": "visible"},
+                        
+                        children=[
+                            dcc.Input(
+                                id="input1",
+                                type="number", 
+                                min=0, max=9, 
+                                step=1, 
+                                placeholder=0,
+                                style={
+                                    "size": "120",
+                                    "text-align": "center",
+                                    "margin-top": "5px",
+                                    "margin-left": "50px",
+                                    "margin-right": "5px", 
+                                    "margin-bottom": "10px",
+                                    "font-weight": "bold",
+                                    #"margin": "auto"
+                                    
+                                },
+                            ),
+                            html.Button(
+                                id="submit-button", 
+                                children=["Submit"],
+                                style={
+                                    "text-align": "center",
+                                    "margin-top": "5px",
+                                    "margin-left": "10px",
+                                    "margin-right": "5px", 
+                                    "margin-bottom": "10px",
+                                    "font-weight": "bold",
+                                    #"margin": "auto"
+                                },
+                            ),
+                        ],
+                    )
+                )
+            else:        
+                return(
+                    html.Div(
+                        html.Img(
+                            #src="data:image/png;base64, " + image_b64,
+                            src='data:image/png;base64,{}'.format(image_b64),
+                            style={"height": "25vh", "display": "block", "margin": "auto"},
+                        ),
+                    ),
+                    html.Div(
+                        #id="div-label-controls",
+                        #style={"display": "none"},
+                        style={"visibility": "hidden"},
+                        
+                        children=[
+                            dcc.Input(
+                                id="input1",
+                                type="number", 
+                                min=0, max=9, 
+                                step=1, 
+                                placeholder="enter label",
+                                style={
+                                    "text-align": "center",
+                                    "margin-bottom": "7px",
+                                    "font-weight": "bold",
+                                },
+                            ),
+                            html.Button(
+                                id="submit-button", 
+                                children=["Submit"],
+                                style={
+                                    "text-align": "center",
+                                    "margin-bottom": "7px",
+                                    "font-weight": "bold",
+                                },
+                            ),
+                        ],
+                        
+                    )
+                )
+        return (None, None)
             
     @app.callback(
         Output("div-plot-click-message", "children"),
@@ -590,3 +719,25 @@ def demo_callbacks(app):
             return "Image Selected"
         else:
             return "Click a data point on the scatter plot to display its corresponding image."
+    
+    @app.callback(
+        Output('number-output', 'children'),
+        [Input('submit-button', 'n_clicks')],
+        [State('input1', 'value')]
+    )
+    def update_output(n_clicks, input1):
+        global data
+        if n_clicks == 1: 
+            Y_TOLB = torch.tensor([input1])
+            print(Y_TOLB)
+            # how to get corresponding X_TOLB?
+            print("data.X_TOLB: ", data.X_TOLB.shape)
+            print("X_tolb_index: ", X_tolb_index)
+        
+            X = torch.cat([data.X, data.X_TOLB[X_tolb_index].reshape(1, data.X_TOLB[X_tolb_index].shape[0], data.X_TOLB[X_tolb_index].shape[1])], dim=0)
+            Y = torch.cat([data.Y, Y_TOLB], dim=0)
+            data.update_data(X, Y)
+            return u'''
+            Label submitted,
+            training dataset has {} datapoints
+            '''.format(X.shape[0])

@@ -146,6 +146,15 @@ body {
   padding: 0px 15px;
 }
 
+#euclidean-distance #submit-button {
+  text-transform: none;
+  font-size: 14px;
+  font-weight: 400;
+  border-radius: 0px;
+  letter-spacing: 0;
+  padding: 0px 15px;
+}
+
 /* ---Different Screen Sizes--- */
 
 @media only screen and (max-width: 768px) {

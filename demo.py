@@ -265,6 +265,15 @@ def create_layout(app):
                                         value="random",
                                     ),
                                     NamedSlider(
+                                        name="Training Sample Size",
+                                        short="samplesize",
+                                        min=100,
+                                        max=1000,
+                                        step=None,
+                                        val=200,
+                                        marks={i: str(i) for i in [100, 500, 1000]},
+                                    ),
+                                    NamedSlider(
                                         name="Number Of Epochs",
                                         short="epochs",
                                         min=10,
@@ -276,60 +285,16 @@ def create_layout(app):
                                         },
                                     ),
                                     NamedSlider(
-                                        name="Perplexity",
-                                        short="perplexity",
-                                        min=3,
-                                        max=100,
-                                        step=None,
-                                        val=30,
-                                        marks={i: str(i) for i in [3, 10, 30, 50, 100]},
-                                    ),
-                                    NamedSlider(
-                                        name="Initial PCA Dimensions",
-                                        short="pca-dimension",
-                                        min=25,
-                                        max=100,
-                                        step=None,
-                                        val=50,
-                                        marks={i: str(i) for i in [25, 50, 100]},
-                                    ),
-                                    NamedSlider(
                                         name="Learning Rate",
                                         short="learning-rate",
-                                        min=10,
-                                        max=200,
+                                        min=0.001,
+                                        max=0.1,
                                         step=None,
-                                        val=100,
-                                        marks={i: str(i) for i in [10, 50, 100, 200]},
+                                        val=0.01,
+                                        marks={i: str(i) for i in [0.001, 0.01, 0.1]},
                                     ),
                                     html.Div(
                                         html.Button(id="train", children=["Train"])
-                                    ),
-                                    html.Div(
-                                        id="div-wordemb-controls",
-                                        style={"display": "none"},
-                                        children=[
-                                            NamedInlineRadioItems(
-                                                name="Display Mode",
-                                                short="wordemb-display-mode",
-                                                options=[
-                                                    {
-                                                        "label": " Regular",
-                                                        "value": "regular",
-                                                    },
-                                                    {
-                                                        "label": " Top-100 Neighbors",
-                                                        "value": "neighbors",
-                                                    },
-                                                ],
-                                                val="regular",
-                                            ),
-                                            dcc.Dropdown(
-                                                id="dropdown-word-selected",
-                                                placeholder="Select word to display its neighbors",
-                                                style={"background-color": "#f2f3f4"},
-                                            ),
-                                        ],
                                     ),
                                 ]
                             )
@@ -338,15 +303,15 @@ def create_layout(app):
                     html.Div(
                         className="six columns",
                         children=[
-                            dcc.Graph(id="graph-3d-plot-tsne", 
+                            dcc.Graph(id="graph-2d-plot-umap", 
                                       #style={"height": "98vh"}
-                                      style={"height": 700}
+                                      style={"height": 700, "width": 700}
                                      )
                         ],
                     ),
                     html.Div(
                         className="three columns",
-                        id="euclidean-distance",
+                        id="label-images",
                         children=[
                             Card(
                                 style={"padding": "5px"},
@@ -383,7 +348,7 @@ def create_layout(app):
                                             ),
                                             html.Button(
                                                 id="submit-button", 
-                                                children=["Submit"],
+                                                children=["SUBMIT"],
                                                 style={
                                                     "text-align": "center",
                                                     "margin-top": "5px",
@@ -395,7 +360,7 @@ def create_layout(app):
                                             ),
                                         ],
                                     ),
-                                    html.Div(id="number-output")
+                                    html.Div(id="div-plot-label-message")
                                 ],
                             )
                         ],
@@ -457,7 +422,7 @@ def demo_callbacks(app):
             )
           
     @app.callback(
-        Output("graph-3d-plot-tsne", "figure"),
+        Output("graph-2d-plot-umap", "figure"),
         [
             Input("strategy", "value"),
             Input("train", "n_clicks"),
@@ -475,17 +440,22 @@ def demo_callbacks(app):
             
             layout = go.Layout(
                 showlegend=True,
-                margin=dict(l=40, r=40, t=40, b=40),
+                margin=dict(l=0, r=0, t=0, b=0),
                 xaxis = dict(autorange=True,
                              showgrid=False,
                              showline=False,
+                             zeroline=False,
                              ticks='',
                              showticklabels=False),
                 yaxis = dict(autorange=True,
                              showgrid=False,
                              showline=False,
+                             zeroline=False,
                              ticks='',
-                             showticklabels=False)
+                             showticklabels=False),
+                legend=dict(yanchor="top",
+                            y=0.99,xanchor="left",
+                            x=0.01)
                 #margin=dict(l=0, r=0, b=0, t=0),
                 #scene=dict(xaxis=axes, yaxis=axes),
             )
@@ -561,7 +531,7 @@ def demo_callbacks(app):
             Output("div-label-controls", "children"),
         ],
         [
-            Input("graph-3d-plot-tsne", "clickData"),
+            Input("graph-2d-plot-umap", "clickData"),
             Input("strategy", "value"),
         ],
     )
@@ -708,7 +678,7 @@ def demo_callbacks(app):
     @app.callback(
         Output("div-plot-click-message", "children"),
         [
-            Input("graph-3d-plot-tsne", "clickData"), 
+            Input("graph-2d-plot-umap", "clickData"), 
             Input("strategy", "value")
         ],
     )
@@ -721,7 +691,7 @@ def demo_callbacks(app):
             return "Click a data point on the scatter plot to display its corresponding image."
     
     @app.callback(
-        Output('number-output', 'children'),
+        Output('div-plot-label-message', 'children'),
         [Input('submit-button', 'n_clicks')],
         [State('input1', 'value')]
     )

@@ -35,6 +35,18 @@ data_transform = transforms.Compose([transforms.ToTensor(),
 handler = get_handler(dataset_name)
 n_classes = 10
 n_epoch = 10
+seed = 123
+
+"""
+Set random seeds for UMAP
+Initialize UMAP reducer
+"""
+np.random.seed(seed)
+torch.manual_seed(seed)
+reducer = umap.UMAP(random_state=seed)
+torch.cuda.manual_seed(seed)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
 
 """
 Define model architecture
@@ -73,12 +85,7 @@ data = Data(X, Y, X_TE, Y_TE, X_NOLB, X_TOLB,
 VARs to control embedding figures
 """
 EMB_HISTORY = None
-"""
-Set random seeds for UMAP
-Initialize UMAP reducer
-"""
-np.random.seed(42)
-reducer = umap.UMAP(random_state=42)
+
 
 def reset_data():
     global data

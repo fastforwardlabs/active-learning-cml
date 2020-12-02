@@ -13,6 +13,7 @@ from dash.exceptions import PreventUpdate
 
 import pandas as pd
 import plotly.graph_objs as go
+from plotly import tools
 import scipy.spatial.distance as spatial_distance
 
 from PIL import Image, ImageEnhance
@@ -67,20 +68,9 @@ _, _, X_INIT, Y_INIT = get_dataset(dataset_name)
 
 X_TR, X_TE, Y_TR, Y_TE = train_test_split(X_INIT, Y_INIT,
                                           test_size=0.2,
-                                          random_state=42,
+                                          random_state=seed,
                                           shuffle=True)
 
-X_NOLB, X, Y_NOLB, Y = train_test_split(X_TR, Y_TR,
-                                        test_size=0.125,
-                                        random_state=42,
-                                        shuffle=True)
-
-X_TOLB = torch.empty([10, 28, 28], dtype=torch.uint8)
-"""
-Make data and train objects
-"""
-data = Data(X, Y, X_TE, Y_TE, X_NOLB, X_TOLB,
-            data_transform, handler, n_classes)
 """
 VARs to control embedding figures
 """
@@ -94,8 +84,8 @@ def reset_data():
     return data
 
 
-def train_model():
-    train_obj = Train(net, handler, n_epoch, data)
+def train_model(n_epoch, lr):
+    train_obj = Train(net, handler, n_epoch, lr, data)
     train_obj.train()
     return train_obj
 
@@ -230,7 +220,8 @@ def create_layout(app):
             html.Div(
                 className="row background",
                 id="demo-explanation",
-                style={"padding": "50px 45px"},
+                #style={"padding": "50px 45px"},
+                style={"padding": "10px 40px"},
                 children=[
                     html.Div(
                         id="description-text", children=dcc.Markdown(demo_intro_md)
@@ -272,12 +263,12 @@ def create_layout(app):
                                         value="random",
                                     ),
                                     NamedSlider(
-                                        name="Training Sample Size",
+                                        name="Initial labeled training examples",
                                         short="samplesize",
                                         min=100,
                                         max=1000,
                                         step=None,
-                                        val=200,
+                                        val=1000,
                                         marks={i: str(i) for i in [100, 500, 1000]},
                                     ),
                                     NamedSlider(
@@ -288,12 +279,12 @@ def create_layout(app):
                                         step=None,
                                         val=10,
                                         marks={
-                                            i: str(i) for i in [10, 20, 30, 40]
+                                            i: str(i) for i in [5, 10, 20, 30]
                                         },
                                     ),
                                     NamedSlider(
                                         name="Learning Rate",
-                                        short="learning-rate",
+                                        short="lr",
                                         min=0.001,
                                         max=0.1,
                                         step=None,
@@ -312,7 +303,7 @@ def create_layout(app):
                         children=[
                             dcc.Graph(id="graph-2d-plot-umap", 
                                       #style={"height": "98vh"}
-                                      style={"height": 700, "width": 700}
+                                      #style={"height": 700, "width": 700}
                                      )
                         ],
                     ),
@@ -374,6 +365,29 @@ def create_layout(app):
                     ),
                 ],
             ),
+            # train, test results
+            html.Div(
+                className="row background",
+                style={"padding": "10px"},
+                
+                
+                children=[
+                    html.Div(
+                        className="six columns",
+                        children =[
+                          dcc.Graph(id="div-results-loss-graph")
+                        ]
+                    ),
+                    html.Div(
+                        className="six columns",
+                        children =[
+                          dcc.Graph(id="div-results-acc-graph")
+                        ]
+                    )
+                ],              
+                
+            ),
+
         ],
     )
   
@@ -433,104 +447,166 @@ def demo_callbacks(app):
         [
             Input("strategy", "value"),
             Input("train", "n_clicks"),
+            Input("slider-samplesize", "value"),
+            Input("slider-epochs", "value"),
+            Input("slider-lr", "value"),
         ],
     )
     def display_3d_scatter_plot(
         strategy,
         n_clicks,
+        samplesize,
+        epochs,
+        lr
     ):
-        if strategy:
-
-            # Plot layout
-            axes = dict(title="", showgrid=True, zeroline=False, showticklabels=False)
+        # Plot layout
+        axes = dict(title="", showgrid=True, zeroline=False, showticklabels=False)
 
             
-            layout = go.Layout(
-                showlegend=True,
-                margin=dict(l=0, r=0, t=0, b=0),
-                xaxis = dict(autorange=True,
-                             showgrid=False,
-                             showline=False,
-                             zeroline=False,
-                             ticks='',
-                             showticklabels=False),
-                yaxis = dict(autorange=True,
-                             showgrid=False,
-                             showline=False,
-                             zeroline=False,
-                             ticks='',
-                             showticklabels=False),
-                legend=dict(yanchor="top",
-                            y=0.99,xanchor="left",
-                            x=0.01)
-                #margin=dict(l=0, r=0, b=0, t=0),
-                #scene=dict(xaxis=axes, yaxis=axes),
-            )
-            global data, train_obj, EMB_HISTORY, orig_x, umap_embeddings_random, labels_text
-            orig_x = data.X.numpy()
+        layout = go.Layout(
+            showlegend=True,
+            margin=dict(l=0, r=0, t=0, b=0),
+            xaxis = dict(autorange=True,
+                         showgrid=False,
+                         showline=False,
+                         zeroline=False,
+                         ticks='',
+                         showticklabels=False),
+            yaxis = dict(autorange=True,
+                         showgrid=False,
+                         showline=False,
+                         zeroline=False,
+                         ticks='',
+                         showticklabels=False),
+            legend=dict(yanchor="top",
+                        y=0.99,xanchor="left",
+                        x=0.01)
+            #margin=dict(l=0, r=0, b=0, t=0),
+            #scene=dict(xaxis=axes, yaxis=axes),
+        )
+        global data, train_obj, EMB_HISTORY, orig_x, umap_embeddings_random, labels_text
             
-            print(n_clicks)
-            if n_clicks is not None:  
-                if n_clicks >= 1:
-                    train_obj = train_model()
-                    (X_TOLB, X_NOLB) = data_to_label(strategy)
-                    data.update_nolabel(X_NOLB)
-                    data.update_tolabel(X_TOLB)
-                    # print('x nolb shape {}'.format(data.X_NOLB.shape))
-                    train_obj.update_data(data)
-                    print('train obj x nolb shape {}'.format(train_obj.data.X_NOLB.shape))        
-                    #embeddings = train_obj.get_test_embedding()
-                    embeddings_tr = train_obj.get_trained_embedding()
-                    # embeddings_nolb = train_obj.get_nolb_embedding()
-                    embeddings_tolb = train_obj.get_tolb_embedding()
-                    #embeddings = np.concatenate((embeddings_tr, embeddings_nolb), axis=0)
-                    embeddings = np.concatenate((embeddings_tr, embeddings_tolb), axis=0)
-                    labels = np.concatenate((data.Y.numpy(),
-                                         np.ones(embeddings_tolb.shape[0])*15),
-                                        axis=0)
-                    labels_text = [str(int(item)) for item in labels]
-                    labels_text = ["to label" if x == "15" else x for x in labels_text]
-            
-                    orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)
-                    umap_embeddings = reducer.fit_transform(embeddings)
-                    EMB_HISTORY = (umap_embeddings, labels)
-                    print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
+        orig_x = torch.empty([samplesize, 28, 28], dtype=torch.uint8)
+        #orig_x = data.X.numpy()
+
+        print("n_clicks: ", n_clicks)
+        if n_clicks is not None:  
+            if n_clicks == 1: 
                 '''
-                elif n_clicks > 1:
-                    umap_embeddings = EMB_HISTORY[0]
-                    labels = EMB_HISTORY[1]
-                    print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
-                    labels_text = [str(int(item)) for item in labels]
-                    labels_text = ["to label" if x == "15" else x for x in labels_text]
+                train_ratio = samplesize/X_TR.shape[0]
+                print("train_ratio", train_ratio)
+                X_NOLB, X, Y_NOLB, Y = train_test_split(X_TR, Y_TR,
+                                    test_size=train_ratio,
+                                    random_state=seed,
+                                    shuffle=True)
+                X_TOLB = torch.empty([10, 28, 28], dtype=torch.uint8)
                 '''
+                '''
+                Make data and train objects
+                '''
+                '''
+                data = Data(X, Y, X_TE, Y_TE, X_NOLB, X_TOLB, 
+                            data_transform, 
+                            handler, n_classes)      
+                '''
+                # disable parameter components
+                '''
+                training
+                '''
+                train_obj = train_model(epochs, lr)
+                (X_TOLB, X_NOLB) = data_to_label(strategy)
+                data.update_nolabel(X_NOLB)
+                data.update_tolabel(X_TOLB)
+                # print('x nolb shape {}'.format(data.X_NOLB.shape))
+                train_obj.update_data(data)
+                print('train obj x nolb shape {}'.format(train_obj.data.X_NOLB.shape))        
+                #embeddings = train_obj.get_test_embedding()
+                embeddings_tr = train_obj.get_trained_embedding()
+                # embeddings_nolb = train_obj.get_nolb_embedding()
+                embeddings_tolb = train_obj.get_tolb_embedding()
+                #embeddings = np.concatenate((embeddings_tr, embeddings_nolb), axis=0)
+                embeddings = np.concatenate((embeddings_tr, embeddings_tolb), axis=0)
+                labels = np.concatenate((data.Y.numpy(),
+                                     np.ones(embeddings_tolb.shape[0])*15),
+                                    axis=0)
+                labels_text = [str(int(item)) for item in labels]
+                labels_text = ["to label" if x == "15" else x for x in labels_text]
+
+                orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)
+                umap_embeddings = reducer.fit_transform(embeddings)
+                EMB_HISTORY = (umap_embeddings, labels)
+                print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
+
+            elif n_clicks > 1:
+                '''
+                training
+                '''
+                train_obj = train_model(epochs, lr)
+                (X_TOLB, X_NOLB) = data_to_label(strategy)
+                data.update_nolabel(X_NOLB)
+                data.update_tolabel(X_TOLB)
+                # print('x nolb shape {}'.format(data.X_NOLB.shape))
+                train_obj.update_data(data)
+                print('train obj x nolb shape {}'.format(train_obj.data.X_NOLB.shape))        
+                #embeddings = train_obj.get_test_embedding()
+                embeddings_tr = train_obj.get_trained_embedding()
+                # embeddings_nolb = train_obj.get_nolb_embedding()
+                embeddings_tolb = train_obj.get_tolb_embedding()
+                #embeddings = np.concatenate((embeddings_tr, embeddings_nolb), axis=0)
+                embeddings = np.concatenate((embeddings_tr, embeddings_tolb), axis=0)
+                labels = np.concatenate((data.Y.numpy(),
+                                     np.ones(embeddings_tolb.shape[0])*15),
+                                    axis=0)
+                labels_text = [str(int(item)) for item in labels]
+                labels_text = ["to label" if x == "15" else x for x in labels_text]
+
+                orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)
+                umap_embeddings = reducer.fit_transform(embeddings)
+                EMB_HISTORY = (umap_embeddings, labels)
+                print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
+
+        else: 
+
+            if EMB_HISTORY is not None:
+                print("it is in else emb_history")
+                umap_embeddings = EMB_HISTORY[0]
+                labels = EMB_HISTORY[1]
+                print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
+                labels_text = [str(int(item)) for item in labels]
+                labels_text = ["to label" if x == "15" else x for x in labels_text]
+
             else: 
-                
-                if EMB_HISTORY is not None:
-                    print("it is in else emb_history")
-                    umap_embeddings = EMB_HISTORY[0]
-                    labels = EMB_HISTORY[1]
-                    print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
-                    labels_text = [str(int(item)) for item in labels]
-                    labels_text = ["to label" if x == "15" else x for x in labels_text]
-                
-                else:
-                    
-                    x = np.random.rand(1000).reshape(1000, 1)
-                    y = np.random.rand(1000).reshape(1000, 1)
-                    umap_embeddings = np.concatenate((x, y), axis=1)
-                    umap_embeddings_random = umap_embeddings
-                    labels = data.Y.numpy()
-                    labels_text = [str(int(item)) for item in labels]
-                    #labels_text = ["to label" if x == "15" else x for x in labels_text]
-                
+                print("emb history is NOne")
+                train_ratio = samplesize/X_TR.shape[0]
+                print("train_ratio", train_ratio)
+                X_NOLB, X, Y_NOLB, Y = train_test_split(X_TR, Y_TR,
+                                    test_size=train_ratio,
+                                    random_state=seed,
+                                    shuffle=True)
+                X_TOLB = torch.empty([10, 28, 28], dtype=torch.uint8)
+                '''
+                Make data and train objects
+                '''
+                data = Data(X, Y, X_TE, Y_TE, X_NOLB, X_TOLB, 
+                            data_transform, 
+                            handler, n_classes)     
+                print("data.X: ", data.X.shape)
+                x = np.random.rand(samplesize).reshape(samplesize, 1)
+                y = np.random.rand(samplesize).reshape(samplesize, 1)
+                umap_embeddings = np.concatenate((x, y), axis=1)
+                umap_embeddings_random = umap_embeddings
+                labels = data.Y.numpy()
+                #labels = np.random.randint(10, size=1000)
+                labels_text = [str(int(item)) for item in labels]
+                orig_x = data.X.numpy()
 
-            embedding_df = pd.DataFrame(data=umap_embeddings, columns=["dim1", "dim2"])
-            #print(df)
-            embedding_df['labels'] = labels_text
-            groups = embedding_df.groupby("labels")
+        embedding_df = pd.DataFrame(data=umap_embeddings, columns=["dim1", "dim2"])
+        #print(df)
+        embedding_df['labels'] = labels_text
+        groups = embedding_df.groupby("labels")
 
-            figure = generate_figure_image(groups, layout)
-            return figure
+        figure = generate_figure_image(groups, layout)
+        return figure
               
     @app.callback(
         [
@@ -718,3 +794,105 @@ def demo_callbacks(app):
             Label submitted,
             training dataset has {} datapoints
             '''.format(X.shape[0])
+    
+    @app.callback(
+        Output("div-results-loss-graph", "figure"),
+        [
+            Input("train", "n_clicks"),
+        ],
+    )
+    def display_results(n_clicks):
+        layout = go.Layout(
+            title="loss",
+            margin=go.layout.Margin(l=50, r=50, b=50, t=50),
+            yaxis={"title": "cross entropy loss"},
+        )
+        step = [1,2,3,4,5,6,7,8,9,10]
+        y_train = [2.31, 2.30, 2.29, 2.28, 2.27, 2.26, 2.25, 2.24, 2.22, 2.20, 2.19]
+        y_val = [2.33, 2.35, 2.33, 2.32, 2.31, 2.30, 2.29, 2.28, 2.27, 2.26, 2.15]
+        
+        # line charts
+        trace_train = go.Scatter(
+            x=step,
+            y=y_train,
+            mode="lines",
+            name="Training",
+            line=dict(color="rgb(54, 218, 170)"),
+            showlegend=False,
+        )
+
+        trace_val = go.Scatter(
+            x=step,
+            y=y_val,
+            mode="lines",
+            name="Validation",
+            line=dict(color="rgb(246, 236, 145)"),
+            showlegend=False,
+        )
+        
+        figure = tools.make_subplots(rows=2, cols=1, print_grid=False)
+
+        figure.append_trace(trace_train, 1, 1)
+        figure.append_trace(trace_val, 2, 1)
+
+        figure["layout"].update(
+            title=layout.title,
+            margin=layout.margin,
+            scene={"domain": {"x": (0.0, 0.5), "y": (0.5, 1)}},
+        )
+
+        figure["layout"]["yaxis1"].update(title="train loss")
+        figure["layout"]["yaxis2"].update(title="val loss")
+        
+        return dcc.Graph(figure=figure)
+
+    @app.callback(
+        Output("div-results-acc-graph", "figure"),
+        [
+            Input("train", "n_clicks"),
+        ],
+    )
+    def display_results(n_clicks):
+        layout = go.Layout(
+            title="accuracy",
+            margin=go.layout.Margin(l=50, r=50, b=50, t=50),
+            yaxis={"title": "cross entropy loss"},
+        )
+        step = [1,2,3,4,5,6,7,8,9,10]
+        y_train = [2.31, 2.30, 2.29, 2.28, 2.27, 2.26, 2.25, 2.24, 2.22, 2.20, 2.19]
+        y_val = [2.33, 2.35, 2.33, 2.32, 2.31, 2.30, 2.29, 2.28, 2.27, 2.26, 2.15]
+        
+        # line charts
+        trace_train = go.Scatter(
+            x=step,
+            y=y_train,
+            mode="lines",
+            name="Training",
+            line=dict(color="rgb(54, 218, 170)"),
+            showlegend=False,
+        )
+
+        trace_val = go.Scatter(
+            x=step,
+            y=y_val,
+            mode="lines",
+            name="Validation",
+            line=dict(color="rgb(246, 236, 145)"),
+            showlegend=False,
+        )
+        
+        figure = tools.make_subplots(rows=2, cols=1, print_grid=False)
+
+        figure.append_trace(trace_train, 1, 1)
+        figure.append_trace(trace_val, 2, 1)
+
+        figure["layout"].update(
+            title=layout.title,
+            margin=layout.margin,
+            scene={"domain": {"x": (0.0, 0.5), "y": (0.5, 1)}},
+        )
+
+        figure["layout"]["yaxis1"].update(title="train acc")
+        figure["layout"]["yaxis2"].update(title="val acc")
+        
+        return dcc.Graph(figure=figure)

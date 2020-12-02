@@ -163,9 +163,19 @@ body {
     width: 90%;
   }
 
+  .two.columns {
+    margin: auto;
+    width: 30%;
+  }
+  
   .three.columns {
     margin: auto;
     width: 75%;
+  }
+
+  .four.columns {
+    margin: auto;
+    width: 50%;
   }
 
   .six.columns {

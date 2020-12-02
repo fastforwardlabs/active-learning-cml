@@ -6,18 +6,19 @@ from torch.utils.data import DataLoader
 
 
 class Train:
-    def __init__(self, net, handler, n_epoch, data):
+    def __init__(self, net, handler, n_epoch, lr, data):
         self.data = data
         self.clf = net
         self.handler = handler
         use_cuda = torch.cuda.is_available()
         self.device = torch.device("cuda" if use_cuda else "cpu")
         self.n_epoch = n_epoch
+        self.lr = lr
 
     def train(self):
         print('train:train with {} datapoints'.format(self.data.X.shape[0]))
         self.clf = self.clf(n_classes=self.data.n_classes).to(self.device)
-        optimizer = optim.SGD(self.clf.parameters(), lr=0.01, momentum=0.5)
+        optimizer = optim.SGD(self.clf.parameters(), lr=self.lr, momentum=0.5)
         loader_tr = self.data.load_train_data()
         for epoch in range(1, self.n_epoch+1):
             train_loss = self._train(loader_tr, optimizer)

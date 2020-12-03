@@ -27,12 +27,15 @@ from sample import Sample
 import torch
 import umap
 import os
+import datetime
 
 dataset_name = 'MNIST'
 strategy_names = ['random', 'entropy', 'entropydrop']
 data_transform = transforms.Compose([transforms.ToTensor(),
                                      transforms.Normalize((0.1307,),
                                                           (0.3081,))])
+model_dir = "./models/model_" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
 handler = get_handler(dataset_name)
 n_classes = 10
 n_epoch = 10
@@ -84,8 +87,8 @@ def reset_data():
     return data
 
 
-def train_model(n_epoch, lr):
-    train_obj = Train(net, handler, n_epoch, lr, data)
+def train_model(n_epoch, lr, modeldir):
+    train_obj = Train(net, handler, n_epoch, lr, data, modeldir)
     train_obj.train()
     return train_obj
 
@@ -513,7 +516,8 @@ def demo_callbacks(app):
                 '''
                 training
                 '''
-                train_obj = train_model(epochs, lr)
+                # create model directory                
+                train_obj = train_model(epochs, lr, model_dir)
                 (X_TOLB, X_NOLB) = data_to_label(strategy)
                 data.update_nolabel(X_NOLB)
                 data.update_tolabel(X_TOLB)
@@ -541,7 +545,7 @@ def demo_callbacks(app):
                 '''
                 training
                 '''
-                train_obj = train_model(epochs, lr)
+                train_obj = train_model(epochs, lr, model_dir)
                 (X_TOLB, X_NOLB) = data_to_label(strategy)
                 data.update_nolabel(X_NOLB)
                 data.update_tolabel(X_TOLB)
@@ -796,58 +800,66 @@ def demo_callbacks(app):
             '''.format(X.shape[0])
     
     @app.callback(
-        Output("div-results-loss-graph", "figure"),
+        Output("div-results-loss-graph", "children"),
         [
             Input("train", "n_clicks"),
         ],
     )
     def display_results(n_clicks):
-        layout = go.Layout(
-            title="loss",
-            margin=go.layout.Margin(l=50, r=50, b=50, t=50),
-            yaxis={"title": "cross entropy loss"},
-        )
-        step = [1,2,3,4,5,6,7,8,9,10]
-        y_train = [2.31, 2.30, 2.29, 2.28, 2.27, 2.26, 2.25, 2.24, 2.22, 2.20, 2.19]
-        y_val = [2.33, 2.35, 2.33, 2.32, 2.31, 2.30, 2.29, 2.28, 2.27, 2.26, 2.15]
-        
-        # line charts
-        trace_train = go.Scatter(
-            x=step,
-            y=y_train,
-            mode="lines",
-            name="Training",
-            line=dict(color="rgb(54, 218, 170)"),
-            showlegend=False,
-        )
+        runlog_filename = os.path.join("./models/model_2020-12-02_21-30-56", "run_log.csv")
+        print("runlog_filename: ", runlog_filename)
+        #if n_clicks == 1:
+        if os.path.isfile(runlog_filename):
+            df = pd.read_csv(runlog_filename)
+            print(df)
 
-        trace_val = go.Scatter(
-            x=step,
-            y=y_val,
-            mode="lines",
-            name="Validation",
-            line=dict(color="rgb(246, 236, 145)"),
-            showlegend=False,
-        )
-        
-        figure = tools.make_subplots(rows=2, cols=1, print_grid=False)
+            layout = go.Layout(
+                title="loss",
+                #margin=go.layout.Margin(l=50, r=50, b=50, t=50),
+                yaxis={"title": "cross entropy loss"},
+            )
+            step = df['epoch']
+            y_train = df['train_loss']
+            y_val = df['val_loss']
 
-        figure.append_trace(trace_train, 1, 1)
-        figure.append_trace(trace_val, 2, 1)
+            # line charts
+            trace_train = go.Scatter(
+                x=step,
+                y=y_train,
+                mode="lines",
+                name="Training",
+                line=dict(color="rgb(54, 218, 170)"),
+                showlegend=False,
+            )
 
-        figure["layout"].update(
-            title=layout.title,
-            margin=layout.margin,
-            scene={"domain": {"x": (0.0, 0.5), "y": (0.5, 1)}},
-        )
+            trace_val = go.Scatter(
+                x=step,
+                y=y_val,
+                mode="lines",
+                name="Validation",
+                line=dict(color="rgb(246, 236, 145)"),
+                showlegend=False,
+            )
 
-        figure["layout"]["yaxis1"].update(title="train loss")
-        figure["layout"]["yaxis2"].update(title="val loss")
-        
-        return dcc.Graph(figure=figure)
+            figure = tools.make_subplots(rows=2, cols=1, print_grid=False)
+
+            figure.append_trace(trace_train, 1, 1)
+            figure.append_trace(trace_val, 2, 1)
+
+            figure["layout"].update(
+                title=layout.title,
+                margin=layout.margin,
+                scene={"domain": {"x": (0.0, 0.5), "y": (0.5, 1)}},
+            )
+
+            figure["layout"]["yaxis1"].update(title="train loss")
+            figure["layout"]["yaxis2"].update(title="val loss")
+
+            return [dcc.Graph(figure=figure)]
+        return [dcc.Graph(figure=None)]
 
     @app.callback(
-        Output("div-results-acc-graph", "figure"),
+        Output("div-results-acc-graph", "children"),
         [
             Input("train", "n_clicks"),
         ],
@@ -858,9 +870,9 @@ def demo_callbacks(app):
             margin=go.layout.Margin(l=50, r=50, b=50, t=50),
             yaxis={"title": "cross entropy loss"},
         )
-        step = [1,2,3,4,5,6,7,8,9,10]
-        y_train = [2.31, 2.30, 2.29, 2.28, 2.27, 2.26, 2.25, 2.24, 2.22, 2.20, 2.19]
-        y_val = [2.33, 2.35, 2.33, 2.32, 2.31, 2.30, 2.29, 2.28, 2.27, 2.26, 2.15]
+        step = pd.Series([1,2,3,4,5,6,7,8,9,10])
+        y_train = pd.Series([2.31, 2.30, 2.29, 2.28, 2.27, 2.26, 2.25, 2.24, 2.22, 2.20, 2.19])
+        y_val = pd.Series([2.33, 2.35, 2.33, 2.32, 2.31, 2.30, 2.29, 2.28, 2.27, 2.26, 2.15])
         
         # line charts
         trace_train = go.Scatter(
@@ -895,4 +907,4 @@ def demo_callbacks(app):
         figure["layout"]["yaxis1"].update(title="train acc")
         figure["layout"]["yaxis2"].update(title="val acc")
         
-        return dcc.Graph(figure=figure)
+        return [dcc.Graph(figure=figure)]

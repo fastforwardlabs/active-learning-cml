@@ -1,4 +1,6 @@
 import numpy as np
+import os
+import csv
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
@@ -6,7 +8,7 @@ from torch.utils.data import DataLoader
 
 
 class Train:
-    def __init__(self, net, handler, n_epoch, lr, data):
+    def __init__(self, net, handler, n_epoch, lr, data, model_dir):
         self.data = data
         self.clf = net
         self.handler = handler
@@ -14,23 +16,65 @@ class Train:
         self.device = torch.device("cuda" if use_cuda else "cpu")
         self.n_epoch = n_epoch
         self.lr = lr
+        self.model_dir = model_dir
+        
+    def save_checkpoint(self, checkpoint, model_dir):
+        f_path = os.path.join(model_dir, 'checkpoint.pt')
+        
+        torch.save(checkpoint, f_path)
 
     def train(self):
         print('train:train with {} datapoints'.format(self.data.X.shape[0]))
+        checkpoint_fpath = os.path.join(self.model_dir, 'checkpoint.pt')
+        #print(checkpoint_fpath)
         self.clf = self.clf(n_classes=self.data.n_classes).to(self.device)
         optimizer = optim.SGD(self.clf.parameters(), lr=self.lr, momentum=0.5)
+        start_epoch = 1
+        
+        if not os.path.exists(self.model_dir):
+            os.mkdir(self.model_dir)
+            
+        # load checkpoint if available
+        if os.path.isfile(checkpoint_fpath):
+            checkpoint = torch.load(checkpoint_fpath)
+            self.clf.load_state_dict(checkpoint['state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            start_epoch = checkpoint['epoch']
+        
         loader_tr = self.data.load_train_data()
-        for epoch in range(1, self.n_epoch+1):
+        
+        runlog_filename = os.path.join(self.model_dir, "run_log.csv")
+        fieldnames = ['epoch', 'train_loss', 'val_loss', 'train_acc', 'val_acc']
+        if not os.path.isfile(runlog_filename):
+            csvfile = open(runlog_filename, 'w', newline='', )
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+        else: # else it exists so append without writing the header
+            csvfile = open(runlog_filename, 'a', newline='')
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            
+        for epoch in range(start_epoch, start_epoch+self.n_epoch):
             train_loss = self._train(loader_tr, optimizer)
             #_, test_loss = self.predict(self.data.X_TE, self.data.Y_TE)
             _, test_loss = self.predict_test()
             train_acc = self.check_accuracy(split='train')
             test_acc = self.check_accuracy(split='test')
             print("{}\t{}\t\t{}\t\t{}\t\t{}".format(epoch,
-                                                    round(train_loss, 4),
-                                                    round(test_loss, 4),
-                                                    round(train_acc, 6),
-                                                    round(test_acc, 6)))
+                                                round(train_loss, 4),
+                                                round(test_loss, 4),
+                                                round(train_acc, 6),
+                                                round(test_acc, 6)))
+            writer.writerow({'epoch': epoch, 'train_loss': train_loss,
+                            'val_loss': test_loss, 'train_acc': train_acc,
+                            'val_acc': test_acc})
+            
+        checkpoint = {
+            'epoch': self.n_epoch + start_epoch,
+            'state_dict': self.clf.state_dict(),
+            'optimizer': optimizer.state_dict()
+        }
+        self.save_checkpoint(checkpoint, self.model_dir)
+        
 
     def _train(self, loader_tr, optimizer):
         self.clf.train()
@@ -172,4 +216,3 @@ class Train:
 
     def update_data(self, data):
         self.data = data
-        

@@ -299,13 +299,14 @@ def create_layout(app):
                                     html.Div(
                                         id="div-parameter-buttons",
                                         children=[
-                                            html.Button(id="train", children=["Train"]),
+                                            html.Button(id="train", children=["Train"], n_clicks=0),
                                             html.Button(
                                                 id="reset", 
                                                 children=["Reset"],
                                                 style={
                                                     "margin-left": "10px",
                                                 },
+                                                n_clicks=0,
                                             )
                                         ],
                                           
@@ -538,8 +539,8 @@ def demo_callbacks(app):
 
         print("train_clicks: ", train_clicks)
         print("reset_click: ", reset_click)
-        if train_clicks is not None:  
-            if train_clicks == 1 and reset_click is None: 
+        if train_clicks > 0:  
+            if train_clicks == 1 and reset_click == 0: 
                 '''
                 train_ratio = samplesize/X_TR.shape[0]
                 print("train_ratio", train_ratio)
@@ -590,7 +591,7 @@ def demo_callbacks(app):
                 EMB_HISTORY = (umap_embeddings, labels)
                 print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
 
-            elif train_clicks > 1 and reset_click is None:
+            elif train_clicks > 1 and reset_click == 0:
                 # disable parameter components
                 strategy_disabled = True
                 samplesize_disabled = True 

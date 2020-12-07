@@ -28,6 +28,7 @@ import torch
 import umap
 import os
 import datetime
+import shutil
 
 dataset_name = 'MNIST'
 strategy_names = ['random', 'entropy', 'entropydrop']
@@ -264,6 +265,7 @@ def create_layout(app):
                                         ],
                                         placeholder="Select a strategy",
                                         value="random",
+                                        disabled=False
                                     ),
                                     NamedSlider(
                                         name="Initial labeled training examples",
@@ -295,8 +297,20 @@ def create_layout(app):
                                         marks={i: str(i) for i in [0.001, 0.01, 0.1]},
                                     ),
                                     html.Div(
-                                        html.Button(id="train", children=["Train"])
+                                        id="div-parameter-buttons",
+                                        children=[
+                                            html.Button(id="train", children=["Train"]),
+                                            html.Button(
+                                                id="reset", 
+                                                children=["Reset"],
+                                                style={
+                                                    "margin-left": "10px",
+                                                },
+                                            )
+                                        ],
+                                          
                                     ),
+                                    
                                 ]
                             )
                         ],
@@ -444,24 +458,56 @@ def demo_callbacks(app):
                 ),
                 "Learn More",
             )
-          
+    '''
     @app.callback(
-        Output("graph-2d-plot-umap", "figure"),
+        [
+            Output("reset", "data"),
+        ],
+        [
+            Input("train", "n_clicks"),
+            Input("reset", "n_clicks"),
+            State("train", "n_clicks")
+        ],
+    )
+    def reset(
+        train_clicks,
+        reset_click,
+        state_train_clicks
+    ):
+        if reset_click >= 1:
+            print("state_train_clicks: ", state_train_clicks)
+            return None
+    '''
+    @app.callback(
+        [
+            Output("graph-2d-plot-umap", "figure"),
+            Output("strategy", "disabled"),
+            Output("slider-samplesize", "disabled"),
+            Output("slider-epochs", "disabled"),
+            Output("slider-lr", "disabled"),
+        ],
         [
             Input("strategy", "value"),
             Input("train", "n_clicks"),
+            Input("reset", "n_clicks"),
             Input("slider-samplesize", "value"),
             Input("slider-epochs", "value"),
-            Input("slider-lr", "value"),
+            Input("slider-lr", "value"),        
         ],
     )
     def display_3d_scatter_plot(
         strategy,
-        n_clicks,
+        train_clicks,
+        reset_click,
         samplesize,
         epochs,
-        lr
+        lr,
     ):
+        strategy_disabled = False
+        samplesize_disabled = False 
+        epochs_disabled = False 
+        lr_disabled = False
+        
         # Plot layout
         axes = dict(title="", showgrid=True, zeroline=False, showticklabels=False)
 
@@ -484,17 +530,16 @@ def demo_callbacks(app):
             legend=dict(yanchor="top",
                         y=0.99,xanchor="left",
                         x=0.01)
-            #margin=dict(l=0, r=0, b=0, t=0),
-            #scene=dict(xaxis=axes, yaxis=axes),
         )
         global data, train_obj, EMB_HISTORY, orig_x, umap_embeddings_random, labels_text
             
         orig_x = torch.empty([samplesize, 28, 28], dtype=torch.uint8)
         #orig_x = data.X.numpy()
 
-        print("n_clicks: ", n_clicks)
-        if n_clicks is not None:  
-            if n_clicks == 1: 
+        print("train_clicks: ", train_clicks)
+        print("reset_click: ", reset_click)
+        if train_clicks is not None:  
+            if train_clicks == 1 and reset_click is None: 
                 '''
                 train_ratio = samplesize/X_TR.shape[0]
                 print("train_ratio", train_ratio)
@@ -513,6 +558,10 @@ def demo_callbacks(app):
                             handler, n_classes)      
                 '''
                 # disable parameter components
+                strategy_disabled = True
+                samplesize_disabled = True 
+                epochs_disabled = True 
+                lr_disabled = True
                 '''
                 training
                 '''
@@ -541,7 +590,14 @@ def demo_callbacks(app):
                 EMB_HISTORY = (umap_embeddings, labels)
                 print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
 
-            elif n_clicks > 1:
+            elif train_clicks > 1 and reset_click is None:
+                # disable parameter components
+                strategy_disabled = True
+                samplesize_disabled = True 
+                epochs_disabled = True 
+                lr_disabled = True
+                
+                #, samplesize_disabled, epochs_disabled, lr_disabled
                 '''
                 training
                 '''
@@ -568,10 +624,57 @@ def demo_callbacks(app):
                 umap_embeddings = reducer.fit_transform(embeddings)
                 EMB_HISTORY = (umap_embeddings, labels)
                 print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
+            elif reset_click >= 1:
+                # need to take care of training results
+                train_clicks = None
+                reset_click = None
+                if os.path.exists(model_dir):
+                    try:
+                        shutil.rmtree(model_dir)
+                    except OSError as e:
+                        print("Error: %s : %s" % (model_dir, e.strerror))
+                
+                EMB_HISTORY = None
+                orig_x = torch.empty([samplesize, 28, 28], dtype=torch.uint8)
+
+                train_ratio = samplesize/X_TR.shape[0]
+
+                X_NOLB, X, Y_NOLB, Y = train_test_split(X_TR, Y_TR,
+                                    test_size=train_ratio,
+                                    random_state=seed,
+                                    shuffle=True)
+                X_TOLB = torch.empty([10, 28, 28], dtype=torch.uint8)
+
+                data = Data(X, Y, X_TE, Y_TE, X_NOLB, X_TOLB, 
+                            data_transform, 
+                            handler, n_classes) 
+                print("data.X: ", data.X.shape)
+                x = np.random.rand(samplesize).reshape(samplesize, 1)
+                y = np.random.rand(samplesize).reshape(samplesize, 1)
+                umap_embeddings = np.concatenate((x, y), axis=1)
+                umap_embeddings_random = umap_embeddings
+                labels = data.Y.numpy()
+                labels_text = [str(int(item)) for item in labels]
+                orig_x = data.X.numpy()
+
+                embedding_df = pd.DataFrame(data=umap_embeddings, columns=["dim1", "dim2"])
+                #print(df)
+                embedding_df['labels'] = labels_text
+                groups = embedding_df.groupby("labels")
+
+                figure = generate_figure_image(groups, layout)
+                #, samplesize_disabled, epochs_disabled, lr_disabled
+                return [figure, strategy_disabled, samplesize_disabled, epochs_disabled, lr_disabled]
 
         else: 
 
             if EMB_HISTORY is not None:
+                # disable parameter components
+                strategy_disabled = True
+                samplesize_disabled = True 
+                epochs_disabled = True 
+                lr_disabled = True
+                
                 print("it is in else emb_history")
                 umap_embeddings = EMB_HISTORY[0]
                 labels = EMB_HISTORY[1]
@@ -610,7 +713,8 @@ def demo_callbacks(app):
         groups = embedding_df.groupby("labels")
 
         figure = generate_figure_image(groups, layout)
-        return figure
+        #, samplesize_disabled, epochs_disabled, lr_disabled
+        return [figure, strategy_disabled, samplesize_disabled, epochs_disabled, lr_disabled]
               
     @app.callback(
         [

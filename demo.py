@@ -299,10 +299,8 @@ def create_layout(app):
                                     html.Div(
                                         id="div-parameter-buttons",
                                         children=[
-                                            html.Button(id="train", children=["Train"], n_clicks=0),
-                                            html.Button(
-                                                id="reset", 
-                                                children=["Reset"],
+                                            html.Button("Train", id="train", n_clicks=0),
+                                            html.Button("Reset", id="reset", 
                                                 style={
                                                     "margin-left": "10px",
                                                 },
@@ -320,7 +318,7 @@ def create_layout(app):
                         className="six columns",
                         children=[
                             dcc.Graph(id="graph-2d-plot-umap", 
-                                      #style={"height": "98vh"}
+                                      style={"height": "78vh"}
                                       #style={"height": 700, "width": 700}
                                      )
                         ],
@@ -421,7 +419,7 @@ def demo_callbacks(app):
                 text=[idx for _ in range(val["dim1"].shape[0])],
                 textposition="top center",
                 mode="markers",
-                marker=dict(size=5, symbol="circle"),
+                marker=dict(size=7, symbol="circle"),
             )
             data.append(scatter)
 
@@ -459,59 +457,30 @@ def demo_callbacks(app):
                 ),
                 "Learn More",
             )
-    '''
-    @app.callback(
-        [
-            Output("reset", "data"),
-        ],
-        [
-            Input("train", "n_clicks"),
-            Input("reset", "n_clicks"),
-            State("train", "n_clicks")
-        ],
-    )
-    def reset(
-        train_clicks,
-        reset_click,
-        state_train_clicks
-    ):
-        if reset_click >= 1:
-            print("state_train_clicks: ", state_train_clicks)
-            return None
-    '''
+    
     @app.callback(
         [
             Output("graph-2d-plot-umap", "figure"),
             Output("strategy", "disabled"),
             Output("slider-samplesize", "disabled"),
             Output("slider-epochs", "disabled"),
-            Output("slider-lr", "disabled"),
-            
+            Output("slider-lr", "disabled")            
         ],
-        [
-            Input("strategy", "value"),
+        [            
             Input("train", "n_clicks"),
-            Input("reset", "n_clicks"),
+            Input("strategy", "value"),
             Input("slider-samplesize", "value"),
             Input("slider-epochs", "value"),
-            Input("slider-lr", "value"),        
+            Input("slider-lr", "value")       
         ],
     )
-    def display_3d_scatter_plot(
-        strategy,
+    def display_3d_scatter_plot(        
         train_clicks,
-        reset_click,
+        strategy,
         samplesize,
         epochs,
-        lr,
+        lr
     ):
-        changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-        train_state = train_clicks
-        
-        if 'reset' in changed_id:
-            msg = 'Reset was most recently clicked'
-            print(msg)
-            train_state=0
         
         strategy_disabled = False
         samplesize_disabled = False 
@@ -547,26 +516,10 @@ def demo_callbacks(app):
         #orig_x = data.X.numpy()
 
         print("train_clicks: ", train_clicks)
-        print("reset_click: ", reset_click)
+        #print("reset_clicks: ", reset_clicks)
+        
         if train_clicks > 0:  
-            if train_clicks == 1 and reset_click == 0: 
-                '''
-                train_ratio = samplesize/X_TR.shape[0]
-                print("train_ratio", train_ratio)
-                X_NOLB, X, Y_NOLB, Y = train_test_split(X_TR, Y_TR,
-                                    test_size=train_ratio,
-                                    random_state=seed,
-                                    shuffle=True)
-                X_TOLB = torch.empty([10, 28, 28], dtype=torch.uint8)
-                '''
-                '''
-                Make data and train objects
-                '''
-                '''
-                data = Data(X, Y, X_TE, Y_TE, X_NOLB, X_TOLB, 
-                            data_transform, 
-                            handler, n_classes)      
-                '''
+            if train_clicks == 1: # and reset_click == 0: 
                 # disable parameter components
                 strategy_disabled = True
                 samplesize_disabled = True 
@@ -600,7 +553,7 @@ def demo_callbacks(app):
                 EMB_HISTORY = (umap_embeddings, labels)
                 print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
 
-            elif train_clicks > 1 and reset_click == 0:
+            elif train_clicks > 1: # and reset_click == 0:
                 # disable parameter components
                 strategy_disabled = True
                 samplesize_disabled = True 
@@ -634,38 +587,6 @@ def demo_callbacks(app):
                 umap_embeddings = reducer.fit_transform(embeddings)
                 EMB_HISTORY = (umap_embeddings, labels)
                 print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
-            elif reset_click >= 1:
-                # need to take care of training results
-                train_clicks = None
-                reset_click = None
-                if os.path.exists(model_dir):
-                    try:
-                        shutil.rmtree(model_dir)
-                    except OSError as e:
-                        print("Error: %s : %s" % (model_dir, e.strerror))
-                
-                EMB_HISTORY = None
-                orig_x = torch.empty([samplesize, 28, 28], dtype=torch.uint8)
-
-                train_ratio = samplesize/X_TR.shape[0]
-
-                X_NOLB, X, Y_NOLB, Y = train_test_split(X_TR, Y_TR,
-                                    test_size=train_ratio,
-                                    random_state=seed,
-                                    shuffle=True)
-                X_TOLB = torch.empty([10, 28, 28], dtype=torch.uint8)
-
-                data = Data(X, Y, X_TE, Y_TE, X_NOLB, X_TOLB, 
-                            data_transform, 
-                            handler, n_classes) 
-                print("data.X: ", data.X.shape)
-                x = np.random.rand(samplesize).reshape(samplesize, 1)
-                y = np.random.rand(samplesize).reshape(samplesize, 1)
-                umap_embeddings = np.concatenate((x, y), axis=1)
-                umap_embeddings_random = umap_embeddings
-                labels = data.Y.numpy()
-                labels_text = [str(int(item)) for item in labels]
-                orig_x = data.X.numpy()
         else: 
 
             if EMB_HISTORY is not None:
@@ -715,7 +636,38 @@ def demo_callbacks(app):
         figure = generate_figure_image(groups, layout)
         #, samplesize_disabled, epochs_disabled, lr_disabled
         return [figure, strategy_disabled, samplesize_disabled, epochs_disabled, lr_disabled]
-              
+    
+    @app.callback(
+        [
+            Output("train", "n_clicks")
+        ],
+        [
+            Input("reset", "n_clicks")
+        ],
+    )
+    def reset(
+        reset_clicks
+    ):
+        print("reset_clicks: ", reset_clicks)
+        global EMB_HISTORY
+        if reset_clicks >= 1:
+            strategy_disabled = False
+            samplesize_disabled = False 
+            epochs_disabled = False 
+            lr_disabled = False
+
+            # need to take care of training results
+            if os.path.exists(model_dir):
+                try:
+                    shutil.rmtree(model_dir)
+                except OSError as e:
+                    print("Error: %s : %s" % (model_dir, e.strerror))
+
+            EMB_HISTORY = None
+            return [0]
+        # need to return something non None
+        #return [train_clicks]
+    
     @app.callback(
         [
             Output("div-plot-click-image", "children"),

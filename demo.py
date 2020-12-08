@@ -486,6 +486,7 @@ def demo_callbacks(app):
             Output("slider-samplesize", "disabled"),
             Output("slider-epochs", "disabled"),
             Output("slider-lr", "disabled"),
+            
         ],
         [
             Input("strategy", "value"),
@@ -504,6 +505,14 @@ def demo_callbacks(app):
         epochs,
         lr,
     ):
+        changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+        train_state = train_clicks
+        
+        if 'reset' in changed_id:
+            msg = 'Reset was most recently clicked'
+            print(msg)
+            train_state=0
+        
         strategy_disabled = False
         samplesize_disabled = False 
         epochs_disabled = False 
@@ -657,16 +666,6 @@ def demo_callbacks(app):
                 labels = data.Y.numpy()
                 labels_text = [str(int(item)) for item in labels]
                 orig_x = data.X.numpy()
-
-                embedding_df = pd.DataFrame(data=umap_embeddings, columns=["dim1", "dim2"])
-                #print(df)
-                embedding_df['labels'] = labels_text
-                groups = embedding_df.groupby("labels")
-
-                figure = generate_figure_image(groups, layout)
-                #, samplesize_disabled, epochs_disabled, lr_disabled
-                return [figure, strategy_disabled, samplesize_disabled, epochs_disabled, lr_disabled]
-
         else: 
 
             if EMB_HISTORY is not None:

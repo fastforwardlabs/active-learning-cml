@@ -1,2 +1,12 @@
 __pycache__/*
+activelearning/__pycache__/*
 MNIST/*
+models/*
+.bash_history/*
+.cache/*
+.conda/*
+.ipython/*
+.local/*
+.pip/*
+.python_history/*
+.viminfo/*

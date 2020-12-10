@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 
 
 class Train:
-    def __init__(self, net, handler, n_epoch, lr, data, model_dir):
+    def __init__(self, net, handler, n_epoch, lr, data, model_dir, step, train_loss, val_loss, train_acc, val_acc):
         self.data = data
         self.clf = net
         self.handler = handler
@@ -17,6 +17,11 @@ class Train:
         self.n_epoch = n_epoch
         self.lr = lr
         self.model_dir = model_dir
+        self.step = step
+        self.train_loss = train_loss
+        self.val_loss = val_loss
+        self.train_acc = train_acc
+        self.val_acc = val_acc
         
     def save_checkpoint(self, checkpoint, model_dir):
         f_path = os.path.join(model_dir, 'checkpoint.pt')
@@ -59,11 +64,17 @@ class Train:
             _, test_loss = self.predict_test()
             train_acc = self.check_accuracy(split='train')
             test_acc = self.check_accuracy(split='test')
+            self.step.append(epoch)
+            self.train_loss.append(train_loss)
+            self.val_loss.append(test_loss)
+            self.train_acc.append(train_acc)
+            self.val_acc.append(test_acc)
+
             print("{}\t{}\t\t{}\t\t{}\t\t{}".format(epoch,
                                                 round(train_loss, 4),
                                                 round(test_loss, 4),
-                                                round(train_acc, 6),
-                                                round(test_acc, 6)))
+                                                round(train_acc, 4),
+                                                round(test_acc, 4)))
             writer.writerow({'epoch': epoch, 'train_loss': train_loss,
                             'val_loss': test_loss, 'train_acc': train_acc,
                             'val_acc': test_acc})

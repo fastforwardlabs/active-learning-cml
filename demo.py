@@ -29,7 +29,8 @@ import umap
 import os
 import datetime
 import shutil
-
+from collections import deque 
+  
 dataset_name = 'MNIST'
 strategy_names = ['random', 'entropy', 'entropydrop']
 data_transform = transforms.Compose([transforms.ToTensor(),
@@ -80,6 +81,14 @@ VARs to control embedding figures
 """
 EMB_HISTORY = None
 
+"""
+For live loss and accuracy updates
+"""
+step = deque() 
+train_loss = deque() 
+val_loss = deque() 
+train_acc = deque() 
+val_acc = deque() 
 
 def reset_data():
     global data
@@ -89,7 +98,9 @@ def reset_data():
 
 
 def train_model(n_epoch, lr, modeldir):
-    train_obj = Train(net, handler, n_epoch, lr, data, modeldir)
+    train_obj = Train(net, handler, n_epoch, lr, data, modeldir,
+                      step, train_loss, val_loss, train_acc, val_acc
+                     )
     train_obj.train()
     return train_obj
 
@@ -384,20 +395,39 @@ def create_layout(app):
             # train, test results
             html.Div(
                 className="row background",
-                style={"padding": "10px"},
+                style={"padding": "10px", "height": "25vh"},
                 
                 
                 children=[
                     html.Div(
                         className="six columns",
                         children =[
-                          dcc.Graph(id="div-results-loss-graph")
+                          dcc.Graph(
+                              id="div-results-loss-graph",
+                              style={'height': "25vh"},
+                              animate=True
+                          ),
+                          dcc.Interval( 
+                              id = 'graph-update', 
+                              interval = 2000, 
+                              n_intervals = 0
+                          ), 
                         ]
                     ),
                     html.Div(
                         className="six columns",
                         children =[
-                          dcc.Graph(id="div-results-acc-graph")
+                          dcc.Graph(
+                              id="div-results-acc-graph",
+                              style={'height': "25vh"},
+                              animate=True
+                          ),
+                          dcc.Interval( 
+                              id = 'acc-graph-update', 
+                              interval = 2000, 
+                              n_intervals = 0
+                          ), 
+                          
                         ]
                     )
                 ],              
@@ -854,66 +884,165 @@ def demo_callbacks(app):
             Label submitted,
             training dataset has {} datapoints
             '''.format(X.shape[0])
+
     
     @app.callback(
-        Output("div-results-loss-graph", "children"),
+        Output("div-results-loss-graph", "figure"),
+        [
+            Input('graph-update', 'n_intervals')
+        ],
+    )
+    def display_loss_results(n):
+        if 'train_obj' in vars() or 'train_obj' in globals():
+            step = list(train_obj.step)
+            y_train = list(train_obj.train_loss)
+            y_val = list(train_obj.val_loss)
+        else:
+            step = [0]
+            y_train = []
+            y_val = []
+          
+
+        layout = go.Layout(
+            #title="loss",
+            margin=go.layout.Margin(l=0, r=0, b=0, t=0),
+            yaxis={"title": "cross entropy loss",},
+            xaxis={
+                "title": "epochs",
+                "range": [min(step),max(step)]
+            },
+            legend=dict(yanchor="bottom", y=0.1, 
+                        xanchor="left", x=0.01),
+            paper_bgcolor="#f2f3f4"
+            
+        )        
+        
+        # line charts
+        trace_train = go.Scatter(
+            x=step,
+            y=y_train,
+            mode="lines+markers",
+            name="Training",
+            line=dict(color="#636EFA"),
+            showlegend=True,
+        )
+
+        trace_val = go.Scatter(
+            x=step,
+            y=y_val,
+            mode="lines+markers",
+            name="Validation",
+            line=dict(color="#00CC96"),
+            showlegend=True,
+        )
+        figure = go.Figure(data=[trace_train, trace_val], layout=layout)
+        return figure
+        
+    @app.callback(
+        Output("div-results-acc-graph", "figure"),
+        [
+            Input('acc-graph-update', 'n_intervals')
+        ],
+    )
+    def display_acc_results(n):
+        if 'train_obj' in vars() or 'train_obj' in globals():
+            step = list(train_obj.step)
+            y_train = list(train_obj.train_acc)
+            y_val = list(train_obj.val_acc)
+        else:
+            step = [0]
+            y_train = []
+            y_val = []
+          
+
+        layout = go.Layout(
+            #title="loss",
+            margin=go.layout.Margin(l=0, r=0, b=0, t=0),
+            yaxis={"title": "accuracy",},
+            xaxis={
+                "title": "epochs",
+                "range": [min(step),max(step)]
+            },
+            legend=dict(yanchor="bottom", y=0.1, 
+                        xanchor="left", x=0.01),
+            paper_bgcolor="#f2f3f4"
+            
+        )        
+        
+        # line charts
+        trace_train = go.Scatter(
+            x=step,
+            y=y_train,
+            mode="lines+markers",
+            name="Training",
+            line=dict(color="#636EFA"),
+            showlegend=True,
+        )
+
+        trace_val = go.Scatter(
+            x=step,
+            y=y_val,
+            mode="lines+markers",
+            name="Validation",
+            line=dict(color="#00CC96"),
+            showlegend=True,
+        )
+        figure = go.Figure(data=[trace_train, trace_val], layout=layout)
+        return figure
+
+
+          
+    '''
+    @app.callback(
+        Output("div-results-loss-graph", "figure"),
         [
             Input("train", "n_clicks"),
         ],
     )
-    def display_results(n_clicks):
+    def display_loss_results(train_clicks):
         runlog_filename = os.path.join("./models/model_2020-12-02_21-30-56", "run_log.csv")
-        print("runlog_filename: ", runlog_filename)
-        #if n_clicks == 1:
-        if os.path.isfile(runlog_filename):
-            df = pd.read_csv(runlog_filename)
-            print(df)
+        #runlog_filename = os.path.join(model_dir, "run_log.csv")
+        #print("runlog_filename: ", runlog_filename)
+        layout = go.Layout(
+            title="loss",
+            margin=go.layout.Margin(l=0, r=0, b=0, t=0),
+            yaxis={"title": "cross entropy loss"},
+            xaxis={"title": "epochs"},
+            legend=dict(yanchor="bottom", y=0.1, 
+                        xanchor="left", x=0.01)
+        )
 
-            layout = go.Layout(
-                title="loss",
-                #margin=go.layout.Margin(l=50, r=50, b=50, t=50),
-                yaxis={"title": "cross entropy loss"},
-            )
-            step = df['epoch']
-            y_train = df['train_loss']
-            y_val = df['val_loss']
+        if train_clicks >= 1:
+            if os.path.isfile(runlog_filename):
+                df = pd.read_csv(runlog_filename)
+                print(df)
+                if df.shape[0] >= 1:
+                    step = df['epoch']
+                    y_train = df['train_loss']
+                    y_val = df['val_loss']
 
-            # line charts
-            trace_train = go.Scatter(
-                x=step,
-                y=y_train,
-                mode="lines",
-                name="Training",
-                line=dict(color="rgb(54, 218, 170)"),
-                showlegend=False,
-            )
+                    # line charts
+                    trace_train = go.Scatter(
+                        x=step,
+                        y=y_train,
+                        mode="lines+markers",
+                        name="Training",
+                        line=dict(color="#636EFA"),
+                        showlegend=True,
+                    )
 
-            trace_val = go.Scatter(
-                x=step,
-                y=y_val,
-                mode="lines",
-                name="Validation",
-                line=dict(color="rgb(246, 236, 145)"),
-                showlegend=False,
-            )
-
-            figure = tools.make_subplots(rows=2, cols=1, print_grid=False)
-
-            figure.append_trace(trace_train, 1, 1)
-            figure.append_trace(trace_val, 2, 1)
-
-            figure["layout"].update(
-                title=layout.title,
-                margin=layout.margin,
-                scene={"domain": {"x": (0.0, 0.5), "y": (0.5, 1)}},
-            )
-
-            figure["layout"]["yaxis1"].update(title="train loss")
-            figure["layout"]["yaxis2"].update(title="val loss")
-
-            return [dcc.Graph(figure=figure)]
-        return [dcc.Graph(figure=None)]
-
+                    trace_val = go.Scatter(
+                        x=step,
+                        y=y_val,
+                        mode="lines+markers",
+                        name="Validation",
+                        line=dict(color="#00CC96"),
+                        showlegend=True,
+                    )
+                    figure = go.Figure(data=[trace_train, trace_val], layout=layout)
+                    return figure
+        return None
+    '''
     @app.callback(
         Output("div-results-acc-graph", "children"),
         [

@@ -21,7 +21,8 @@ smartly labeled dataset. The process typically looks like this:
 We use MNIST to illustrate the workflow but only use the 10k testing dataset as
 our entire dataset. We first set aside 2,000 datapoints for testing. Out of the
 remaining 8,000 datapoints, we allow user to select 100, 500 or 1,000 are labeled 
-examples while the rest are unlabeled.
+examples while the rest are unlabeled. The user can then provide labels to 10 
+shortlisted examples (based on selection strategy) from the remaining training examples.
 
 ## How to use
 

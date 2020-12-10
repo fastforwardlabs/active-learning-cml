@@ -52,8 +52,8 @@ Fourth, start the application within CDSW.
 
 Finally, access demo at Subdomain.ffl-4.cdsw.eng.cloudera.com
 
-
-
+### To Do
+- Reset biutton click should restore the graphs as well
 
 
 

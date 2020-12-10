@@ -31,14 +31,14 @@ There are two ways to start the application.
 
 Just type 
 ```python
-python app.py
+python app_new.py
 ```
 
 ### Within CDSW
 
 This can be set up as an application.
 
-First, specify the port in app.py. 
+First, specify the port in app_new.py. 
 
 ```python
 app.run_server(port=os.getenv("CDSW_APP_PORT"))

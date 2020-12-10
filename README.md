@@ -57,6 +57,6 @@ Finally, access demo at Subdomain.ffl-4.cdsw.eng.cloudera.com
 - Reset button click should restore the graphs as well
 - Why the train error > validation error
 - Review that AL is adding value to the process
-
+- any others
 
 

@@ -405,7 +405,7 @@ def create_layout(app):
                           dcc.Graph(
                               id="div-results-loss-graph",
                               style={'height': "25vh"},
-                              animate=True
+                              #animate=True
                           ),
                           dcc.Interval( 
                               id = 'graph-update', 
@@ -420,7 +420,7 @@ def create_layout(app):
                           dcc.Graph(
                               id="div-results-acc-graph",
                               style={'height': "25vh"},
-                              animate=True
+                              #animate=True
                           ),
                           dcc.Interval( 
                               id = 'acc-graph-update', 
@@ -889,7 +889,8 @@ def demo_callbacks(app):
     @app.callback(
         Output("div-results-loss-graph", "figure"),
         [
-            Input('graph-update', 'n_intervals')
+            Input('graph-update', 'n_intervals'),
+            
         ],
     )
     def display_loss_results(n):

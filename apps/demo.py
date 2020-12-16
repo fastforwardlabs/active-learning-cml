@@ -83,12 +83,13 @@ EMB_HISTORY = None
 
 """
 For live loss and accuracy updates
-"""
+
 step = deque() 
 train_loss = deque() 
 val_loss = deque() 
 train_acc = deque() 
 val_acc = deque() 
+"""
 
 def reset_data():
     global data
@@ -98,9 +99,7 @@ def reset_data():
 
 
 def train_model(n_epoch, lr, modeldir):
-    train_obj = Train(net, handler, n_epoch, lr, data, modeldir,
-                      step, train_loss, val_loss, train_acc, val_acc
-                     )
+    train_obj = Train(net, handler, n_epoch, lr, data, modeldir)
     train_obj.train()
     return train_obj
 

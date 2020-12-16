@@ -4,11 +4,12 @@ import csv
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.utils.data import DataLoader
 
+from torch.utils.data import DataLoader
+from collections import deque 
 
 class Train:
-    def __init__(self, net, handler, n_epoch, lr, data, model_dir, step, train_loss, val_loss, train_acc, val_acc):
+    def __init__(self, net, handler, n_epoch, lr, data, model_dir):
         self.data = data
         self.clf = net
         self.handler = handler
@@ -17,11 +18,11 @@ class Train:
         self.n_epoch = n_epoch
         self.lr = lr
         self.model_dir = model_dir
-        self.step = step
-        self.train_loss = train_loss
-        self.val_loss = val_loss
-        self.train_acc = train_acc
-        self.val_acc = val_acc
+        self.step = deque() 
+        self.train_loss = deque() 
+        self.val_loss = deque() 
+        self.train_acc = deque() 
+        self.val_acc = deque() 
         
     def save_checkpoint(self, checkpoint, model_dir):
         f_path = os.path.join(model_dir, 'checkpoint.pt')

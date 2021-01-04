@@ -62,8 +62,13 @@ class Train:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             
         for epoch in range(start_epoch, start_epoch + self.n_epoch):
-            self.train_nll(train_loader, test_loader, optimizer, epoch)
-            #self.test_nll(test_loader, epoch)
+            self._train(train_loader, optimizer, epoch)
+            self._test(test_loader, epoch)
+            
+            writer.writerow({'epoch': self.step[-1], 'train_loss': self.train_loss[-1],
+                            'val_loss': self.val_loss[-1], 'train_acc': self.train_acc[-1],
+                            'val_acc': self.val_acc[-1]})
+            
             
         '''
         for epoch in range(start_epoch, start_epoch+self.n_epoch):
@@ -86,23 +91,44 @@ class Train:
             writer.writerow({'epoch': epoch, 'train_loss': train_loss,
                             'val_loss': test_loss, 'train_acc': train_acc,
                             'val_acc': test_acc})
-            
+        '''
         checkpoint = {
             'epoch': self.n_epoch + start_epoch,
             'state_dict': self.clf.state_dict(),
             'optimizer': optimizer.state_dict()
         }
         self.save_checkpoint(checkpoint, self.model_dir)
-        '''   
+        
 
-    def _train(self, epoch, loader_tr, optimizer):
+    def _train(self, train_loader, optimizer, epoch):
         self.clf.train()
-        total_loss = 0
+        train_loss = 0
+        correct = 0
+        
+        for batch_idx, (data, target, idxs) in enumerate(train_loader):
+            data, target = data.to(self.device), target.to(self.device)
+            optimizer.zero_grad()
+            output, _ = self.clf(data)
+            loss = F.nll_loss(output, target)
+            train_loss += F.nll_loss(output, target,  reduction='sum').item()
+            pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
+            correct += pred.eq(target.view_as(pred)).sum().item()
+            loss.backward()
+            optimizer.step()
+            
+        train_loss /= len(train_loader.dataset)
+
+        print('\nTrain set: Epoch: {}, Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+            epoch, train_loss, correct, len(train_loader.dataset),
+            100. * correct / len(train_loader.dataset)))
+        
+        self.step.append(epoch)
+        self.train_loss.append(train_loss)
+        self.train_acc.append(correct / len(train_loader.dataset))
+
+
+        '''
         for batch_idx, (x, y, idxs) in enumerate(loader_tr):
-            '''
-            print('_train x shape {}'.format(x.shape))
-            print('_train y shape {}'.format(y.shape))
-            '''
             # x, y = x.to(self.device), y.to(self.device)
             optimizer.zero_grad()
             out, e1 = self.clf(x)
@@ -116,6 +142,7 @@ class Train:
                                                                            100. * batch_idx / len(loader_tr), loss.item()))
             
         return total_loss/len(loader_tr)
+        '''
       
     '''
     The problem is that we want to look at the train and test/val set loss at the
@@ -127,6 +154,27 @@ class Train:
     and epoch level, but its true that the avg test loss is lower for MNIST.
     Example other sources: https://nextjournal.com/gkoehler/pytorch-mnist
     '''
+
+    def _test(self, test_loader, epoch):
+        self.clf.eval()
+        test_loss = 0
+        correct = 0
+        with torch.no_grad():
+            for batch_idx, (data, target, idxs) in enumerate(test_loader):
+                data, target = data.to(self.device), target.to(self.device)
+                output, _ = self.clf(data)
+                loss = F.nll_loss(output, target)
+                test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+                pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
+                correct += pred.eq(target.view_as(pred)).sum().item()
+        test_loss /= len(test_loader.dataset)
+
+        print('Test set: Epoch: {}, Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+            epoch, test_loss, correct, len(test_loader.dataset),
+            100. * correct / len(test_loader.dataset)))
+        self.val_loss.append(test_loss)
+        self.val_acc.append(correct / len(test_loader.dataset))
+
 
     def train_nll(self, train_loader, test_loader, optimizer, epoch):
         self.clf.train()

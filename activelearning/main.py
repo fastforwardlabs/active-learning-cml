@@ -26,15 +26,6 @@ torch.cuda.manual_seed(seed)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
-"""
-For live loss and accuracy updates
-"""
-step = deque() 
-train_loss = deque() 
-val_loss = deque() 
-train_acc = deque() 
-val_acc = deque()
-
 model_dir = "./models/model_" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 #if __name__ == "__main__":

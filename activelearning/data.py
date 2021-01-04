@@ -46,7 +46,7 @@ class Data:
                                          self.Y_TE,
                                          transform=self.transform),
                             shuffle=False,
-                            batch_size=1000,
+                            batch_size=64,
                             num_workers=1)
         return loader
     

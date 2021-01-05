@@ -56,7 +56,7 @@ This can be set up as an application.
 
 - Fourth, start the application within CDSW.
 
-- Finally, access demo at <<subdomain>>.ffl-4.cdsw.eng.cloudera.com
+- Finally, access demo at `subdomain.ffl-4.cdsw.eng.cloudera.com`
 
 ### To Do
 - Why the train error > validation error - done, fixed

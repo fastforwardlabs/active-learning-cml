@@ -31,18 +31,17 @@ from activelearning.data import Data
 from activelearning.train import Train
 from activelearning.sample import Sample
 
-# Global variables
-  
+"""
+Global variables
+"""  
 dataset_name = 'MNIST'
 strategy_names = ['random', 'entropy', 'entropydrop']
 data_transform = transforms.Compose([transforms.ToTensor(),
                                      transforms.Normalize((0.1307,),
                                                           (0.3081,))])
 model_dir = "./models/model_" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-
 handler = get_handler(dataset_name)
-n_classes = 10 # remove?
-n_epoch = 10 # remove?
+n_classes = 10 
 seed = 123
 prev_reset_clicks = 0 
 prev_train_clicks = 0
@@ -90,12 +89,6 @@ def reset_data():
     data = Data(X, Y, X_TE, Y_TE, X_NOLB, X_TOLB,
                 data_transform, handler, n_classes)
     return data
-
-
-def train_model(n_epoch, lr, modeldir):    
-    train_obj.train()
-    return train_obj
-
 
 def data_to_label(strategy):
     print('getting new data to label')

@@ -98,8 +98,7 @@ def reset_data():
     return data
 
 
-def train_model(n_epoch, lr, modeldir):
-    train_obj = Train(net, handler, n_epoch, lr, data, modeldir)
+def train_model(n_epoch, lr, modeldir):    
     train_obj.train()
     return train_obj
 
@@ -558,8 +557,10 @@ def demo_callbacks(app):
                 training
                 '''
                 print("start training: ", datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-                # create model directory                
-                train_obj = train_model(epochs, lr, model_dir)
+                # create model directory    
+                train_obj = Train(net, handler, epochs, lr, data, model_dir)
+                train_obj.train()
+                #train_obj = train_model(epochs, lr, model_dir)
                 (X_TOLB, X_NOLB) = data_to_label(strategy)
                 data.update_nolabel(X_NOLB)
                 data.update_tolabel(X_TOLB)
@@ -595,7 +596,8 @@ def demo_callbacks(app):
                 '''
                 training
                 '''
-                train_obj = train_model(epochs, lr, model_dir)
+                train_obj.train()
+                #train_obj = train_model(epochs, lr, model_dir)
                 (X_TOLB, X_NOLB) = data_to_label(strategy)
                 data.update_nolabel(X_NOLB)
                 data.update_tolabel(X_TOLB)
@@ -902,11 +904,11 @@ def demo_callbacks(app):
             y_train = list(train_obj.train_loss)
             y_val = list(train_obj.val_loss)
         else:
-            step = [0]
+            step = [1, 10]
             y_train = []
             y_val = []
             
-        print("step:", step)
+        #print("step:", step)
 
         layout = go.Layout(
             margin=go.layout.Margin(l=0, r=0, b=0, t=0),

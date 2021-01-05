@@ -58,10 +58,14 @@ This can be set up as an application.
 ### To Do
 - Why the train error > validation error - done, fixed
 - Add refresh graphs button instead of flickering? - fixed
-- What's wrong with the epoch updates now?
-- Reset button click should restore the graphs as well
-- Review that AL is adding value to the process
-- The label this image option should disappear after training
-- any others
+- What's wrong with the epoch updates now? - fixed
+- Reset button click should restore the graphs as well - fixed
+- Review that AL is adding value to the process - done
+  Yes, it does. For instance, say we have 100 examples and train a model for 60 epochs
+  with random strategy, the val accuracy is then 78%. If we use entropy strategy we 
+  get around 83% by the end of 70 epochs. Although close this should ideally get better 
+  with more epochs .
+- The "label this image" option should disappear after training either point to a different image
+  or just have "click a data point ..." message shown
 
 

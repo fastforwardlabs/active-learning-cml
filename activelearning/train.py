@@ -23,6 +23,7 @@ class Train:
         self.val_loss = deque() 
         self.train_acc = deque() 
         self.val_acc = deque() 
+        self.clf = self.clf().to(self.device)
         
     def save_checkpoint(self, checkpoint, model_dir):
         f_path = os.path.join(model_dir, 'checkpoint.pt')
@@ -34,7 +35,7 @@ class Train:
         checkpoint_fpath = os.path.join(self.model_dir, 'checkpoint.pt')
         #print(checkpoint_fpath)
         #self.clf = self.clf(n_classes=self.data.n_classes).to(self.device)
-        self.clf = self.clf().to(self.device)
+        
         optimizer = optim.SGD(self.clf.parameters(), lr=self.lr, momentum=0.5)
         start_epoch = 1
         

@@ -12,9 +12,6 @@ import errno
 def get_dataset(name):
     if name == 'MNIST':
         return get_MNIST()
-    elif name == 'QUICKDRAW':
-        return get_QUICKDRAW(0.06)
-
 
 def get_MNIST():
     raw_tr = datasets.MNIST('./MNIST', train=True, download=True)
@@ -28,9 +25,6 @@ def get_MNIST():
 def get_handler(name):
     if name == 'MNIST':
         return MNISTHandler
-    elif name == 'QUICKDRAW':
-        return QuickDrawHandler
-
 
 class MNISTHandler(Dataset):
     def __init__(self, X, Y, transform=None):

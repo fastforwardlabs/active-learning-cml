@@ -30,6 +30,8 @@ from activelearning.model import get_net
 from activelearning.data import Data
 from activelearning.train import Train
 from activelearning.sample import Sample
+
+# Global variables
   
 dataset_name = 'MNIST'
 strategy_names = ['random', 'entropy', 'entropydrop']
@@ -39,9 +41,11 @@ data_transform = transforms.Compose([transforms.ToTensor(),
 model_dir = "./models/model_" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 handler = get_handler(dataset_name)
-n_classes = 10
-n_epoch = 10
+n_classes = 10 # remove?
+n_epoch = 10 # remove?
 seed = 123
+prev_reset_clicks = 0 
+prev_train_clicks = 0
 
 """
 Set random seeds for UMAP
@@ -80,16 +84,6 @@ X_TR, X_TE, Y_TR, Y_TE = train_test_split(X_INIT, Y_INIT,
 VARs to control embedding figures
 """
 EMB_HISTORY = None
-
-"""
-For live loss and accuracy updates
-
-step = deque() 
-train_loss = deque() 
-val_loss = deque() 
-train_acc = deque() 
-val_acc = deque() 
-"""
 
 def reset_data():
     global data
@@ -538,12 +532,13 @@ def demo_callbacks(app):
                         y=0.99,xanchor="left",
                         x=0.01)
         )
-        global data, train_obj, EMB_HISTORY, orig_x, umap_embeddings_random, labels_text
+        global data, train_obj, EMB_HISTORY, orig_x, umap_embeddings_random, labels_text, prev_train_clicks
             
-        orig_x = torch.empty([samplesize, 28, 28], dtype=torch.uint8)
+        #orig_x = torch.empty([samplesize, 28, 28], dtype=torch.uint8)
         #orig_x = data.X.numpy()
 
         print("train_clicks: ", train_clicks)
+        prev_train_clicks = train_clicks
         #print("reset_clicks: ", reset_clicks)
         
         if train_clicks > 0:  
@@ -553,6 +548,8 @@ def demo_callbacks(app):
                 samplesize_disabled = True 
                 epochs_disabled = True 
                 lr_disabled = True
+                
+                orig_x = torch.empty([samplesize, 28, 28], dtype=torch.uint8)
                 '''
                 training
                 '''
@@ -582,7 +579,7 @@ def demo_callbacks(app):
                 orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)
                 umap_embeddings = reducer.fit_transform(embeddings)
                 EMB_HISTORY = (umap_embeddings, labels)
-                print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
+                #print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
                 print("end training: ", datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
             elif train_clicks > 1: # and reset_click == 0:
@@ -671,9 +668,7 @@ def demo_callbacks(app):
         return [figure, strategy_disabled, samplesize_disabled, epochs_disabled, lr_disabled]
     
     @app.callback(
-        [
-            Output("train", "n_clicks")
-        ],
+        Output("train", "n_clicks"),
         [
             Input("reset", "n_clicks")
         ],
@@ -699,9 +694,9 @@ def demo_callbacks(app):
 
             EMB_HISTORY = None
             prev_reset_clicks = reset_clicks
-            return [0]
-        # need to return something non None
-        #return [train_clicks]
+            return  0 
+        print("prev_train_clicks: ", prev_train_clicks)
+        return prev_train_clicks
     
     @app.callback(
         [
@@ -756,7 +751,7 @@ def demo_callbacks(app):
             X_tolb_index = None
             if labels_text[clicked_idx] == "to label":
                 X_tolb_index = np.where((data.X_TOLB.numpy() == image_vector).all((1,2)))[0][0]
-                print("X_tolb_index: ", X_tolb_index)
+                #print("X_tolb_index: ", X_tolb_index)
             image_np = image_vector.reshape(28, 28).astype(np.float64)
 
             # Encode image into base 64
@@ -852,16 +847,17 @@ def demo_callbacks(app):
                         
                     )
                 )
-        return (None, None)
+        else:
+            print("no clickData")
+            return (None, None)
             
     @app.callback(
         Output("div-plot-click-message", "children"),
         [
-            Input("graph-2d-plot-umap", "clickData"), 
-            Input("strategy", "value")
+            Input("graph-2d-plot-umap", "clickData")
         ],
     )
-    def display_click_message(clickData, strategy):
+    def display_click_message(clickData):
         # Displays message shown when a point in the graph is clicked, depending whether it's an image or word
         
         if clickData:

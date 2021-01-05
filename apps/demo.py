@@ -274,7 +274,7 @@ def create_layout(app):
                                             },
                                         ],
                                         placeholder="Select a strategy",
-                                        value="random",
+                                        value="entropy",
                                         disabled=False
                                     ),
                                     NamedSlider(
@@ -364,7 +364,7 @@ def create_layout(app):
                                                     "size": "120",
                                                     "text-align": "center",
                                                     "margin-top": "5px",
-                                                    "margin-left": "50px",
+                                                    "margin-left": "60px",
                                                     "margin-right": "5px", 
                                                     "margin-bottom": "10px",
                                                     "font-weight": "bold",
@@ -407,8 +407,8 @@ def create_layout(app):
                               #animate=True
                           ),
                           dcc.Interval( 
-                              id = 'graph-update', 
-                              interval = 2000, 
+                              id = 'loss-graph-update', 
+                              interval = 20000, 
                               n_intervals = 0
                           ), 
                         ]
@@ -423,7 +423,7 @@ def create_layout(app):
                           ),
                           dcc.Interval( 
                               id = 'acc-graph-update', 
-                              interval = 2000, 
+                              interval = 20000, 
                               n_intervals = 0
                           ), 
                           
@@ -557,6 +557,7 @@ def demo_callbacks(app):
                 '''
                 training
                 '''
+                print("start training: ", datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
                 # create model directory                
                 train_obj = train_model(epochs, lr, model_dir)
                 (X_TOLB, X_NOLB) = data_to_label(strategy)
@@ -581,6 +582,7 @@ def demo_callbacks(app):
                 umap_embeddings = reducer.fit_transform(embeddings)
                 EMB_HISTORY = (umap_embeddings, labels)
                 print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
+                print("end training: ", datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
             elif train_clicks > 1: # and reset_click == 0:
                 # disable parameter components
@@ -678,7 +680,8 @@ def demo_callbacks(app):
         reset_clicks
     ):
         print("reset_clicks: ", reset_clicks)
-        global EMB_HISTORY
+        global EMB_HISTORY, prev_reset_clicks
+        
         if reset_clicks >= 1:
             strategy_disabled = False
             samplesize_disabled = False 
@@ -693,6 +696,7 @@ def demo_callbacks(app):
                     print("Error: %s : %s" % (model_dir, e.strerror))
 
             EMB_HISTORY = None
+            prev_reset_clicks = reset_clicks
             return [0]
         # need to return something non None
         #return [train_clicks]
@@ -705,9 +709,10 @@ def demo_callbacks(app):
         [
             Input("graph-2d-plot-umap", "clickData"),
             Input("strategy", "value"),
+            Input("train", "n_clicks"),
         ],
     )
-    def display_click_image(clickData, strategy):
+    def display_click_image(clickData, strategy, train_clicks):
         print("its div-plot-click-image")
         global X_tolb_index
         if clickData:
@@ -781,7 +786,7 @@ def demo_callbacks(app):
                                     "size": "120",
                                     "text-align": "center",
                                     "margin-top": "5px",
-                                    "margin-left": "50px",
+                                    "margin-left": "60px",
                                     "margin-right": "5px", 
                                     "margin-bottom": "10px",
                                     "font-weight": "bold",
@@ -888,8 +893,7 @@ def demo_callbacks(app):
     @app.callback(
         Output("div-results-loss-graph", "figure"),
         [
-            Input('graph-update', 'n_intervals'),
-            
+            Input('loss-graph-update', 'n_intervals')
         ],
     )
     def display_loss_results(n):
@@ -901,10 +905,10 @@ def demo_callbacks(app):
             step = [0]
             y_train = []
             y_val = []
-          
+            
+        print("step:", step)
 
         layout = go.Layout(
-            #title="loss",
             margin=go.layout.Margin(l=0, r=0, b=0, t=0),
             yaxis={"title": "cross entropy loss",},
             xaxis={
@@ -913,8 +917,7 @@ def demo_callbacks(app):
             },
             legend=dict(yanchor="bottom", y=0.1, 
                         xanchor="left", x=0.01),
-            paper_bgcolor="#f2f3f4"
-            
+            paper_bgcolor="#f2f3f4"            
         )        
         
         # line charts
@@ -950,7 +953,7 @@ def demo_callbacks(app):
             y_train = list(train_obj.train_acc)
             y_val = list(train_obj.val_acc)
         else:
-            step = [0]
+            step = [0, 10]
             y_train = []
             y_val = []
           
@@ -958,7 +961,10 @@ def demo_callbacks(app):
         layout = go.Layout(
             #title="loss",
             margin=go.layout.Margin(l=0, r=0, b=0, t=0),
-            yaxis={"title": "accuracy",},
+            yaxis={
+                "title": "accuracy",
+                "range": [0.0,1.0]
+            },
             xaxis={
                 "title": "epochs",
                 "range": [min(step),max(step)]

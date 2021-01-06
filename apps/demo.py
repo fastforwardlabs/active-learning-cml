@@ -23,7 +23,6 @@ from plotly import tools
 from PIL import Image, ImageEnhance
 from sklearn.model_selection import train_test_split
 from torchvision import transforms
-from collections import deque 
 
 from activelearning.dataset import get_dataset, get_handler
 from activelearning.model import get_net
@@ -71,7 +70,6 @@ X_NOLB (unlabeled datapool): 7000
 X_TE (Testing): 2000 datapoints
 X_TOLB: Datapoints that require human labeling
 """
-# FIX, do this in data object?
 _, _, X_INIT, Y_INIT = get_dataset(dataset_name)
 
 X_TR, X_TE, Y_TR, Y_TE = train_test_split(X_INIT, Y_INIT,
@@ -128,10 +126,8 @@ def create_img(arr, shape=(28, 28)):
 
 # get relative data folder
 PATH = pathlib.Path(__file__).parent
-
 with open(PATH.joinpath("demo_intro.md"), "r") as file:
   demo_intro_md = file.read()
-
 with open(PATH.joinpath("demo_description.md"), "r") as file:
   demo_description_md = file.read()
 
@@ -315,7 +311,6 @@ def create_layout(app):
                         children=[
                             dcc.Graph(id="graph-2d-plot-umap", 
                                       style={"height": "78vh"}
-                                      #style={"height": 700, "width": 700}
                                      )
                         ],
                     ),
@@ -339,38 +334,47 @@ def create_layout(app):
                                         id="div-label-controls",
                                         #style={"display": "none"},
                                         style={"visibility": "hidden"},
-                                        children=[
-                                            dcc.Input(
-                                                id="input1", 
-                                                type="number", 
-                                                min=0, max=9, 
-                                                step=1, 
-                                                placeholder="enter label",
-                                                style={
-                                                    "size": "120",
-                                                    "text-align": "center",
-                                                    "margin-top": "5px",
-                                                    "margin-left": "60px",
-                                                    "margin-right": "5px", 
-                                                    "margin-bottom": "10px",
-                                                    "font-weight": "bold",
-                                                },
-                                            ),
-                                            html.Button(
-                                                id="submit-button", 
-                                                children=["SUBMIT"],
-                                                style={
-                                                    "text-align": "center",
-                                                    "margin-top": "5px",
-                                                    "margin-left": "10px",
-                                                    "margin-right": "5px", 
-                                                    "margin-bottom": "10px",
-                                                    "font-weight": "bold",
-                                                },
-                                            ),
-                                        ],
+                                        children = [
+                                          dcc.Input(
+                                              id="input-label",
+                                              type="number", 
+                                              min=0, max=9, 
+                                              step=1, 
+                                              placeholder=0,
+                                              style={
+                                                  "size": "120",
+                                                  "text-align": "center",
+                                                  "margin-top": "5px",
+                                                  "margin-left": "50px",
+                                                  "margin-right": "5px", 
+                                                  "margin-bottom": "10px",
+                                                  "font-weight": "bold",
+                                              },
+                                          ),
+                                          html.Button(
+                                              id="submit-button", 
+                                              children=["Submit"],
+                                              style={
+                                                  "text-align": "center",
+                                                  "margin-top": "5px",
+                                                  "margin-left": "10px",
+                                                  "margin-right": "5px", 
+                                                  "margin-bottom": "10px",
+                                                  "font-weight": "bold",
+                                              },
+                                          ),
+                                      ],
+                                      
                                     ),
-                                    html.Div(id="div-plot-label-message")
+                                    html.Div(
+                                        id="div-plot-label-message",
+                                        style={
+                                            "text-align": "center",
+                                            "margin-bottom": "7px",
+                                            'color': 'blue', 
+                                            'font-style': 'italic'
+                                        },
+                                    )
                                 ],
                             )
                         ],
@@ -423,9 +427,11 @@ def create_layout(app):
     )
   
 def demo_callbacks(app):
+    '''
+    generates the scatter plot based on embedding data
+    '''
     def generate_figure_image(groups, layout):
         data = []
-
         for idx, val in groups:
             scatter = go.Scatter(
                 name=idx,
@@ -437,11 +443,10 @@ def demo_callbacks(app):
                 marker=dict(size=7, symbol="circle"),
             )
             data.append(scatter)
-
         figure = go.Figure(data=data, layout=layout)
-
         return figure
-    
+
+
     # Callback function for the learn-more button
     @app.callback(
         [
@@ -472,14 +477,17 @@ def demo_callbacks(app):
                 ),
                 "Learn More",
             )
-    
+
+
     @app.callback(
         [
             Output("graph-2d-plot-umap", "figure"),
             Output("strategy", "disabled"),
             Output("slider-samplesize", "disabled"),
             Output("slider-epochs", "disabled"),
-            Output("slider-lr", "disabled")            
+            Output("slider-lr", "disabled"),
+            Output("graph-2d-plot-umap", "clickData"), 
+            #Output('div-plot-label-message', 'children')
         ],
         [            
             Input("train", "n_clicks"),
@@ -495,17 +503,14 @@ def demo_callbacks(app):
         samplesize,
         epochs,
         lr
-    ):
-        
+    ):        
         strategy_disabled = False
         samplesize_disabled = False 
         epochs_disabled = False 
         lr_disabled = False
         
         # Plot layout
-        axes = dict(title="", showgrid=True, zeroline=False, showticklabels=False)
-
-            
+        axes = dict(title="", showgrid=True, zeroline=False, showticklabels=False)            
         layout = go.Layout(
             showlegend=True,
             margin=dict(l=0, r=0, t=0, b=0),
@@ -526,14 +531,8 @@ def demo_callbacks(app):
                         x=0.01)
         )
         global data, train_obj, EMB_HISTORY, orig_x, umap_embeddings_random, labels_text, prev_train_clicks
-            
-        #orig_x = torch.empty([samplesize, 28, 28], dtype=torch.uint8)
-        #orig_x = data.X.numpy()
-
         print("train_clicks: ", train_clicks)
         prev_train_clicks = train_clicks
-        #print("reset_clicks: ", reset_clicks)
-        
         if train_clicks > 0:  
             if train_clicks == 1: # and reset_click == 0: 
                 # disable parameter components
@@ -541,7 +540,6 @@ def demo_callbacks(app):
                 samplesize_disabled = True 
                 epochs_disabled = True 
                 lr_disabled = True
-                
                 orig_x = torch.empty([samplesize, 28, 28], dtype=torch.uint8)
                 '''
                 training
@@ -550,18 +548,14 @@ def demo_callbacks(app):
                 # create model directory    
                 train_obj = Train(net, handler, epochs, lr, data, model_dir)
                 train_obj.train()
-                #train_obj = train_model(epochs, lr, model_dir)
                 (X_TOLB, X_NOLB) = data_to_label(strategy)
                 data.update_nolabel(X_NOLB)
                 data.update_tolabel(X_TOLB)
-                # print('x nolb shape {}'.format(data.X_NOLB.shape))
+                #print('x nolb shape {}'.format(data.X_NOLB.shape))
                 train_obj.update_data(data)
                 print('train obj x nolb shape {}'.format(train_obj.data.X_NOLB.shape))        
-                #embeddings = train_obj.get_test_embedding()
                 embeddings_tr = train_obj.get_trained_embedding()
-                # embeddings_nolb = train_obj.get_nolb_embedding()
                 embeddings_tolb = train_obj.get_tolb_embedding()
-                #embeddings = np.concatenate((embeddings_tr, embeddings_nolb), axis=0)
                 embeddings = np.concatenate((embeddings_tr, embeddings_tolb), axis=0)
                 labels = np.concatenate((data.Y.numpy(),
                                      np.ones(embeddings_tolb.shape[0])*15),
@@ -572,7 +566,6 @@ def demo_callbacks(app):
                 orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)
                 umap_embeddings = reducer.fit_transform(embeddings)
                 EMB_HISTORY = (umap_embeddings, labels)
-                #print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
                 print("end training: ", datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
             elif train_clicks > 1: # and reset_click == 0:
@@ -580,25 +573,21 @@ def demo_callbacks(app):
                 strategy_disabled = True
                 samplesize_disabled = True 
                 epochs_disabled = True 
-                lr_disabled = True
-                
-                #, samplesize_disabled, epochs_disabled, lr_disabled
+                lr_disabled = True                
                 '''
                 training
                 '''
+                print("start training: ", datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
                 train_obj.train()
                 #train_obj = train_model(epochs, lr, model_dir)
                 (X_TOLB, X_NOLB) = data_to_label(strategy)
                 data.update_nolabel(X_NOLB)
                 data.update_tolabel(X_TOLB)
-                # print('x nolb shape {}'.format(data.X_NOLB.shape))
+                #print('x nolb shape {}'.format(data.X_NOLB.shape))
                 train_obj.update_data(data)
                 print('train obj x nolb shape {}'.format(train_obj.data.X_NOLB.shape))        
-                #embeddings = train_obj.get_test_embedding()
                 embeddings_tr = train_obj.get_trained_embedding()
-                # embeddings_nolb = train_obj.get_nolb_embedding()
                 embeddings_tolb = train_obj.get_tolb_embedding()
-                #embeddings = np.concatenate((embeddings_tr, embeddings_nolb), axis=0)
                 embeddings = np.concatenate((embeddings_tr, embeddings_tolb), axis=0)
                 labels = np.concatenate((data.Y.numpy(),
                                      np.ones(embeddings_tolb.shape[0])*15),
@@ -609,9 +598,8 @@ def demo_callbacks(app):
                 orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)
                 umap_embeddings = reducer.fit_transform(embeddings)
                 EMB_HISTORY = (umap_embeddings, labels)
-                print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
+                print("end training: ", datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
         else: 
-
             if EMB_HISTORY is not None:
                 # disable parameter components
                 strategy_disabled = True
@@ -619,15 +607,14 @@ def demo_callbacks(app):
                 epochs_disabled = True 
                 lr_disabled = True
                 
-                print("it is in else emb_history")
+                print("with embedding history")
                 umap_embeddings = EMB_HISTORY[0]
                 labels = EMB_HISTORY[1]
                 print('umap x{} y{}'.format(umap_embeddings[0,0], umap_embeddings[0,1]))
                 labels_text = [str(int(item)) for item in labels]
                 labels_text = ["to label" if x == "15" else x for x in labels_text]
-
             else: 
-                print("emb history is NOne")
+                print("no embedding history")
                 train_ratio = samplesize/X_TR.shape[0]
                 print("train_ratio", train_ratio)
                 X_NOLB, X, Y_NOLB, Y = train_test_split(X_TR, Y_TR,
@@ -655,11 +642,10 @@ def demo_callbacks(app):
         #print(df)
         embedding_df['labels'] = labels_text
         groups = embedding_df.groupby("labels")
+        figure = generate_figure_image(groups, layout)        
+        return [figure, strategy_disabled, samplesize_disabled, epochs_disabled, lr_disabled, None]
 
-        figure = generate_figure_image(groups, layout)
-        #, samplesize_disabled, epochs_disabled, lr_disabled
-        return [figure, strategy_disabled, samplesize_disabled, epochs_disabled, lr_disabled]
-    
+
     @app.callback(
         Output("train", "n_clicks"),
         [
@@ -670,14 +656,12 @@ def demo_callbacks(app):
         reset_clicks
     ):
         print("reset_clicks: ", reset_clicks)
-        global EMB_HISTORY, prev_reset_clicks
-        
+        global EMB_HISTORY, prev_reset_clicks        
         if reset_clicks >= 1:
             strategy_disabled = False
             samplesize_disabled = False 
             epochs_disabled = False 
             lr_disabled = False
-
             # need to take care of training results
             if os.path.exists(model_dir):
                 try:
@@ -690,19 +674,18 @@ def demo_callbacks(app):
             return  0 
         print("prev_train_clicks: ", prev_train_clicks)
         return prev_train_clicks
-    
+
+
     @app.callback(
         [
             Output("div-plot-click-image", "children"),
             Output("div-label-controls", "children"),
         ],
         [
-            Input("graph-2d-plot-umap", "clickData"),
-            Input("strategy", "value"),
-            Input("train", "n_clicks"),
+            Input("graph-2d-plot-umap", "clickData")
         ],
     )
-    def display_click_image(clickData, strategy, train_clicks):
+    def display_click_image(clickData):
         print("its div-plot-click-image")
         global X_tolb_index
         if clickData:
@@ -754,20 +737,16 @@ def demo_callbacks(app):
                 print("within to label")
                 return(
                     html.Div(
-                        #id="div-plot-click-image",
                         html.Img(
                             src='data:image/png;base64,{}'.format(image_b64),
                             style={"height": "25vh", "display": "block", "margin": "auto"},
                         )
                     ),
                     html.Div(
-                        #id="div-label-controls",
-                        #style={"display": "block"},
                         style={"visibility": "visible"},
-                        
                         children=[
                             dcc.Input(
-                                id="input1",
+                                id="input-label",
                                 type="number", 
                                 min=0, max=9, 
                                 step=1, 
@@ -776,12 +755,10 @@ def demo_callbacks(app):
                                     "size": "120",
                                     "text-align": "center",
                                     "margin-top": "5px",
-                                    "margin-left": "60px",
+                                    "margin-left": "50px",
                                     "margin-right": "5px", 
                                     "margin-bottom": "10px",
                                     "font-weight": "bold",
-                                    #"margin": "auto"
-                                    
                                 },
                             ),
                             html.Button(
@@ -794,7 +771,6 @@ def demo_callbacks(app):
                                     "margin-right": "5px", 
                                     "margin-bottom": "10px",
                                     "font-weight": "bold",
-                                    #"margin": "auto"
                                 },
                             ),
                         ],
@@ -804,46 +780,19 @@ def demo_callbacks(app):
                 return(
                     html.Div(
                         html.Img(
-                            #src="data:image/png;base64, " + image_b64,
                             src='data:image/png;base64,{}'.format(image_b64),
                             style={"height": "25vh", "display": "block", "margin": "auto"},
                         ),
                     ),
                     html.Div(
-                        #id="div-label-controls",
-                        #style={"display": "none"},
                         style={"visibility": "hidden"},
-                        
-                        children=[
-                            dcc.Input(
-                                id="input1",
-                                type="number", 
-                                min=0, max=9, 
-                                step=1, 
-                                placeholder="enter label",
-                                style={
-                                    "text-align": "center",
-                                    "margin-bottom": "7px",
-                                    "font-weight": "bold",
-                                },
-                            ),
-                            html.Button(
-                                id="submit-button", 
-                                children=["Submit"],
-                                style={
-                                    "text-align": "center",
-                                    "margin-bottom": "7px",
-                                    "font-weight": "bold",
-                                },
-                            ),
-                        ],
-                        
                     )
                 )
         else:
             print("no clickData")
             return (None, None)
-            
+
+  
     @app.callback(
         Output("div-plot-click-message", "children"),
         [
@@ -851,34 +800,31 @@ def demo_callbacks(app):
         ],
     )
     def display_click_message(clickData):
-        # Displays message shown when a point in the graph is clicked, depending whether it's an image or word
-        
+        # Displays message shown when a point in the graph is clicked
         if clickData:
             return "Image Selected"
         else:
             return "Click a data point on the scatter plot to display its corresponding image."
-    
+
+          
     @app.callback(
         Output('div-plot-label-message', 'children'),
         [Input('submit-button', 'n_clicks')],
-        [State('input1', 'value')]
+        [State('input-label', 'value')]
     )
-    def update_output(n_clicks, input1):
-        global data
+    def update_output(n_clicks, input_label):
+        global data, labels_text
         if n_clicks == 1: 
-            Y_TOLB = torch.tensor([input1])
-            print(Y_TOLB)
-            # how to get corresponding X_TOLB?
+            Y_TOLB = torch.tensor([input_label])
+            print("y labeled: ", Y_TOLB)            
             print("data.X_TOLB: ", data.X_TOLB.shape)
             print("X_tolb_index: ", X_tolb_index)
-        
+            labels_text[X_tolb_index] = str(int(Y_TOLB))
+            # how to get corresponding X_TOLB?
             X = torch.cat([data.X, data.X_TOLB[X_tolb_index].reshape(1, data.X_TOLB[X_tolb_index].shape[0], data.X_TOLB[X_tolb_index].shape[1])], dim=0)
             Y = torch.cat([data.Y, Y_TOLB], dim=0)
             data.update_data(X, Y)
-            return u'''
-            Label submitted,
-            training dataset has {} datapoints
-            '''.format(X.shape[0])
+            return u'''Training dataset has {} datapoints'''.format(X.shape[0])
 
     
     @app.callback(
@@ -895,10 +841,7 @@ def demo_callbacks(app):
         else:
             step = [1, 10]
             y_train = []
-            y_val = []
-            
-        #print("step:", step)
-
+            y_val = []            
         layout = go.Layout(
             margin=go.layout.Margin(l=0, r=0, b=0, t=0),
             yaxis={"title": "cross entropy loss",},
@@ -909,8 +852,7 @@ def demo_callbacks(app):
             legend=dict(yanchor="bottom", y=0.1, 
                         xanchor="left", x=0.01),
             paper_bgcolor="#f2f3f4"            
-        )        
-        
+        )                
         # line charts
         trace_train = go.Scatter(
             x=step,
@@ -920,7 +862,6 @@ def demo_callbacks(app):
             line=dict(color="#636EFA"),
             showlegend=True,
         )
-
         trace_val = go.Scatter(
             x=step,
             y=y_val,
@@ -931,7 +872,8 @@ def demo_callbacks(app):
         )
         figure = go.Figure(data=[trace_train, trace_val], layout=layout)
         return figure
-        
+
+    
     @app.callback(
         Output("div-results-acc-graph", "figure"),
         [
@@ -946,9 +888,7 @@ def demo_callbacks(app):
         else:
             step = [0, 10]
             y_train = []
-            y_val = []
-          
-
+            y_val = []          
         layout = go.Layout(
             #title="loss",
             margin=go.layout.Margin(l=0, r=0, b=0, t=0),
@@ -962,10 +902,8 @@ def demo_callbacks(app):
             },
             legend=dict(yanchor="bottom", y=0.1, 
                         xanchor="left", x=0.01),
-            paper_bgcolor="#f2f3f4"
-            
-        )        
-        
+            paper_bgcolor="#f2f3f4"            
+        )                
         # line charts
         trace_train = go.Scatter(
             x=step,
@@ -975,7 +913,6 @@ def demo_callbacks(app):
             line=dict(color="#636EFA"),
             showlegend=True,
         )
-
         trace_val = go.Scatter(
             x=step,
             y=y_val,

@@ -69,7 +69,7 @@ This can be set up as an application.
   get around 83% by the end of 70 epochs. Although close this should ideally get better 
   with more epochs .
 - The "label this image" option should disappear after training, either point to a different image
-  or just have "click a data point ..." message shown
+  or just have "click a data point ..." message shown - fixed, minor exception
 - Exception/ bug: - fixed
   ```
     reset_clicks:  0

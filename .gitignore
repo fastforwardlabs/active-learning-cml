@@ -1,5 +1,6 @@
 __pycache__/*
 activelearning/__pycache__/*
+apps/__pycache__/*
 MNIST/*
 models/*
 .bash_history/*

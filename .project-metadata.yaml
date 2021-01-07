@@ -1,0 +1,38 @@
+name: ActiveLearner
+description: Launches Active Learning workflow
+author: Cloudera Inc.
+specification_version: 1.0
+prototype_version: 1.0
+date: "2021-01-07"
+api_version: 1
+
+tasks:
+  - type: create_job
+    name: Install dependencies
+    entity_label: install_deps
+    script: install_deps.py
+    arguments: None
+    cpu: 2
+    memory: 6
+    short_summary: Job to install dependencies and download training data.
+    environment:
+      TASK_TYPE: CREATE/RUN_JOB
+    kernel: python3
+
+  - type: run_job
+    entity_label: install_deps
+    short_summary: Running install dependencies training job.
+    long_summary: >-
+      Running the job to install dependencies.
+  - type: start_application
+    short_summary: Create a web application that serves the Active Learner workflow
+    long_summary: Create a web application that serves the Active Learner workflow. Note that this prototype requires a minimum of 2 CPUs and 6GB memory.
+    name: Active Learner 
+    subdomain: al
+    description: Create a web application for active learning workflow. Note that this prototype requires a minimum of 2 CPUs and 6GB memory.
+    script: app.py
+    cpu: 2
+    memory: 6
+    environment_variables:
+      TASK_TYPE: START_APPLICATION
+    kernel: python3

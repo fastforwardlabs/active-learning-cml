@@ -1,7 +1,11 @@
 # Active Learning Workflow Demo
 
-This is a basic Dash application to demonstrate the active learning workflow. 
-To build intuition for why active learning works, please see [this prototype](https://activelearner.fastforwardlabs.com/).
+> Active Learner employees random and entropy selection strategies to demonstrate the 
+active learning workflow using the MNIST dataset. 
+> To build an intuition for why active learning works, please see our blog on [Learning with Limited Labeled Data](https://blog.cloudera.com/a-guide-to-learning-with-limited-labeled-data/) 
+and [the prototype](https://activelearner.fastforwardlabs.com/) that accompanies it.
+
+![AL Screenshot](docs/images/al.png)
 
 ## What is Active Learning
 
@@ -17,30 +21,43 @@ available to us
 * Add these back into the labeled datapool
 * Repeat the training process and iterate
 
+## A note on the dataset
 
-## Data
-
-We use MNIST to illustrate the workflow but only use the 10k testing dataset as
-our entire dataset. We first set aside 2,000 datapoints for validation/testing. 
-Out of the remaining 8,000 datapoints, we allow user to select 100, 500 or 1,000 as 
-initial labeled examples while the rest are unlabeled. The user can then provide 
-labels for the 10 shortlisted examples (based on the selection strategy) from the 
+We use the [MNIST dataset](http://yann.lecun.com/exdb/mnist/) to illustrate the 
+workflow but only use the 10k testing dataset as our entire dataset. 
+- We first set aside 2,000 datapoints for validation/testing
+- Out of the remaining 8,000 datapoints, we allow user to select 100, 500 or 1,000 as 
+initial labeled examples while the rest are unlabeled. 
+- The user can then provide labels for the 10 shortlisted examples (based on the selection strategy) from the 
 remaining training examples and continue to train a model with the additional data 
-points. In the long run the model performance should differ based on the selection strategy 
-employed.
+points. 
+- In the long run the model performance should differ based on the selection strategy employed.
 
+# Launch the Application on CML
+
+There are two ways to launch the NeuralQA prototype on CML:
+
+1. **From Prototype Catalog** - Navigate to the Prototype Catalog on a CML workspace, select the "Active Learner" tile, click "Launch as Project", click "Configure Project"
+2. **As ML Prototype** - In a CML workspace, click "New Project", add a Project Name, select "ML Prototype" as the Initial Setup option, copy in the [repo URL](https://github.com/fastforwardlabs/active-learning-cml), click "Create Project", click "Configure Project"
+
+> Note: Active Learner depends on several heavy libraries (Pytorch, Dash, and so on). A minimum of 6GB memory instance is recommended to run this template.
 ## How to use
+
+
+# delete starting this point
+
+Remove `experiments` folder after review
 
 There are two ways to start the application.
 
-### As a normal python session
+## As a normal python session
 
 Just type 
   ```python
   python app_new.py
   ```
 
-### Within CDSW
+## Within CDSW
 
 This can be set up as an application.
 
@@ -58,7 +75,9 @@ This can be set up as an application.
 
 - Finally, access demo at `subdomain.ffl-4.cdsw.eng.cloudera.com`
 
-### To Do
+
+## To Do
+- Reset click should change or not display the "Training dataset has ... " examples
 - Why the train error > validation error - done, fixed
 - Add refresh graphs button instead of flickering? - fixed
 - What's wrong with the epoch updates now? - fixed

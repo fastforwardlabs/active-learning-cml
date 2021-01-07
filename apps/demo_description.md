@@ -1,4 +1,4 @@
-## How to use this app?
+## How to use Active Learner?
 
 * First, select the appropriate hyperparameters - initial labeled examples, lr, strategy, and number of epochs
 * Click "Train" button to start model training
@@ -6,4 +6,4 @@
 * The datapoints that require human labeling are overlaid on the 2D visualization as "to label" dots
 * Next, provide labels by clicking on these data points which then renders the image on the right hand side, label and click "Submit"
 * Train the model again
-* Repeat the process until you achieve the desired performance
+* Repeat the process until you have achieved the desired performance

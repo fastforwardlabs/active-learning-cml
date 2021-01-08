@@ -1,4 +1,4 @@
-## How to use Active Learner?
+### How to use Active Learner?
 
 * First, select the appropriate hyperparameters - initial labeled examples, lr, strategy, and number of epochs
 * Click "Train" button to start model training

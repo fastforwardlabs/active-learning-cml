@@ -865,7 +865,8 @@ def demo_callbacks(app):
             X = torch.cat([data.X, data.X_TOLB[X_tolb_index].reshape(1, data.X_TOLB[X_tolb_index].shape[0], data.X_TOLB[X_tolb_index].shape[1])], dim=0)
             Y = torch.cat([data.Y, Y_TOLB], dim=0)
             data.update_data(X, Y)
-            return u'''Training dataset has {} datapoints'''.format(X.shape[0])
+            return u'''Training dataset has {} datapoints'''.format(data.X.shape[0])
+        return u''' '''
 
     
     @app.callback(

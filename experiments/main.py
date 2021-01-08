@@ -1,3 +1,8 @@
+"""
+Code to experiment and test the model training w/o UI (Dash part of it)
+"""
+
+
 import numpy as np
 import torch
 import umap
@@ -73,15 +78,12 @@ if __name__ == "__main__":
     print("data.X: ", data.X.shape)
     print("data.X_TE: ", data.X_TE.shape)
 
-    #data = Data(X, Y, X_TE, Y_TE, X_NOLB,
-    #            data_transform, handler, n_classes)
-
     # train model
     n_epoch = 10
     train_obj = Train(net, handler, n_epoch, 0.01, data, model_dir)
     train_obj.train()
-    # emb = train_obj.get_trained_embedding()
-    emb = train_obj.get_test_embedding()
+    emb = train_obj.get_trained_embedding()
+    #emb = train_obj.get_test_embedding()
     # select datapoints (need trained model, and data)
     sample = Sample(train_obj.clf, data)
     # get 10 datapoint

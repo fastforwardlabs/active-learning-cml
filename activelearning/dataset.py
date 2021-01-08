@@ -55,8 +55,8 @@ def get_dataset(name):
         return get_MNIST()
 
 def get_MNIST():
-    raw_tr = datasets.MNIST('./MNIST', train=True, download=True)
-    raw_te = datasets.MNIST('./MNIST', train=False, download=True)
+    raw_tr = datasets.MNIST('./data/MNIST', train=True, download=True)
+    raw_te = datasets.MNIST('./data/MNIST', train=False, download=True)
     X_tr = raw_tr.data
     Y_tr = raw_tr.targets
     X_te = raw_te.data

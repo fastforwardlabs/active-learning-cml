@@ -1,13 +1,17 @@
 # Active Learning Workflow Demo
 
-> Active Learner employees random and entropy selection strategies to demonstrate the 
-active learning workflow using the MNIST dataset. 
-> To build an intuition for why active learning works, please see our blog on [Learning with Limited Labeled Data](https://blog.cloudera.com/a-guide-to-learning-with-limited-labeled-data/) 
-and [the prototype](https://activelearner.fastforwardlabs.com/) that accompanies it.
+> Supervised machine learning, while powerful, needs labeled data to be
+effective. Active learning reduces the number of labeled examples needed to
+train a model, saving time and money while obtaining comparable performance to
+models trained with much more data.
+> This application is meant to serve as a complement to the 
+[prototype](https://activelearner.fastforwardlabs.com/) for the report
+we released on Learning with Limited Labeled Data. To build an intuition for 
+why active learning works, please see our blogpost[Learning with Limited Labeled Data](https://blog.cloudera.com/a-guide-to-learning-with-limited-labeled-data/) 
 
 ![AL Screenshot](docs/images/al.png)
 
-## What is Active Learning
+## What is Active Learning?
 
 Active learning is an iterative process, and relies on human input to build up a
 smartly labeled dataset. The process typically looks like this:
@@ -21,6 +25,13 @@ available to us
 * Add these back into the labeled datapool
 * Repeat the training process and iterate
 
+We use the MNIST dataset to illustrate the active learning workflow. To start, 
+we train a convolutional neural network using only a few labeled datapoints. 
+You can kick off training by selecting appropriate hyperparameters and clicking 
+on the "TRAIN" button. Once the model has completed training, you can visualize 
+the embeddings of the convolutional neural network by using UMAP to project the 
+high dimensional representation down to 2D. 
+
 ## A note on the dataset
 
 We use the [MNIST dataset](http://yann.lecun.com/exdb/mnist/) to illustrate the 
@@ -32,6 +43,8 @@ initial labeled examples while the rest are unlabeled.
 remaining training examples and continue to train a model with the additional data 
 points. 
 - In the long run the model performance should differ based on the selection strategy employed.
+
+## Structure
 
 # Launch the Application on CML
 
@@ -78,6 +91,8 @@ This can be set up as an application.
 
 ## To Do
 - Reset click should change or not display the "Training dataset has ... " examples
+- clean-up
+
 - Why the train error > validation error - done, fixed
 - Add refresh graphs button instead of flickering? - fixed
 - What's wrong with the epoch updates now? - fixed

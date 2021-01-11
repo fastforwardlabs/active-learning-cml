@@ -47,9 +47,14 @@ app = dash.Dash(
     __name__, meta_tags=[{"name": "viewport", "content": "width=device-width"}]
 )
 
+# Uncomment the line below to run w/o CML or CDSW
+# server = app.server
 app.layout = create_layout(app)
 demo_callbacks(app)
 
 # Running server
 if __name__ == '__main__':
+    # Uncomment/ comment either of these lines depending on if you are running locally vs CDSW / CML
     app.run_server(port=os.getenv("CDSW_APP_PORT"))
+    # OR for local
+    # app.run_server(debug=True)

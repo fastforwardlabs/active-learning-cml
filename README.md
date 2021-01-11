@@ -32,105 +32,135 @@ on the "TRAIN" button. Once the model has completed training, you can visualize
 the embeddings of the convolutional neural network by using UMAP to project the 
 high dimensional representation down to 2D. 
 
-## A note on the dataset
+## Structure
 
-We use the [MNIST dataset](http://yann.lecun.com/exdb/mnist/) to illustrate the 
-workflow but only use the 10k testing dataset as our entire dataset. 
-- We first set aside 2,000 datapoints for validation/testing
-- Out of the remaining 8,000 datapoints, we allow user to select 100, 500 or 1,000 as 
+```
+.
+├── activelearning        # active learning scripts
+├── apps                  # Dash application
+├── assets                # Dash related assets
+├── cml                   # This folder contains scripts that facilitate the project launch on CML.
+├── data                  # This folder contains MNIST data.
+├── docs                  # images/ snapshots for README
+├── experiments           # Contains a script that demonstrate the use of active learning functions
+```
+
+The `assets`, `data`, `docs`, and `experiments` directories are unimportant and 
+can be ignored. 
+
+### `activelearning`
+```
+activelearning
+├── data.py
+├── dataset.py
+├── model.py
+├── sample.py
+└── train.py
+```
+- `data.py` loads train and validation data
+- `dataset.py` MNIST dataset handler
+- `model.py` Neural network architecture
+- `sample.py` defines random, entropy and entropy dropout selection strategies
+- `train.py` helper functions for model training, generating embeddings and predictions, computing metrics, checkpointing, saving results in text file and so on
+
+### `apps` 
+```
+apps
+├── app.py
+├── demo.py 
+├── demo_description.md
+├── demo_intro.md
+```
+These scripts leverage the stylesheets from the `assets` folder provide a UI to:
+- train a model based on the user selected hyperparameters,
+- visualize the trained embeddings using UMAP, a dimension reductionality technique,
+- visualize model performance metric son trains and validation sets
+- and request labels for 10 selected datapoints from the user to retrain the model
+
+### `data`
+```
+data
+├── MNIST
+```
+The project uses the [MNIST dataset](http://yann.lecun.com/exdb/mnist/) to illustrate 
+the AL workflow. It uses only the 10k testing dataset as the entire dataset. 
+- First set aside 2,000 datapoints for validation/testing
+- Out of the remaining 8,000 datapoints, allow the user to select 100, 500 or 1,000 as 
 initial labeled examples while the rest are unlabeled. 
 - The user can then provide labels for the 10 shortlisted examples (based on the selection strategy) from the 
 remaining training examples and continue to train a model with the additional data 
 points. 
-- In the long run the model performance should differ based on the selection strategy employed.
+- In the long run the model performance differs based on the selection strategy employed.
 
-## Structure
+## Using the App
+To go from a fresh clone of the repo to the final state, follow these instructions in order.
 
-# Launch the Application on CML
+### Installation
+The code and applications within were developed against Python 3.6.9, and are likely also to function with more recent versions of Python. We relied on GPUs for much of the analysis and use a version of PyTorch optimized for CUDA 10.2. 
 
+To install dependencies, first create and activate a new virtual environment through your preferred means, then pip install from the requirements file. I recommend:
+
+```python
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+In CML or CDSW, no virtual env is necessary. Instead, inside a Python 3 session (with at least 2 vCPU / 4 GiB Memory), simply run
+
+```python
+!pip3 install -r requirements.txt     # notice `pip3`, not `pip`
+```
+
+#### As a normal python session
+- First, uncomment the following lines in `app.py`
+  ```
+  # Uncomment the line below to run w/o CML or CDSW
+  server = app.server
+  
+  # Running server
+  if __name__ == '__main__':
+    # Uncomment, if you are running locally vs CDSW / CML
+    # app.run_server(port=os.getenv("CDSW_APP_PORT"))
+    # OR for local
+    app.run_server(debug=True)
+  ```
+- Run
+  ```
+  python app.py
+  ```
+
+#### Within CML or CDSW
+- First, specify the port in app.py. 
+  ```
+  # Comment the line below to run w/o CML or CDSW
+  # server = app.server
+  
+  # Running server
+  if __name__ == '__main__':
+    # Uncomment if you are running locally vs CDSW / CML
+    app.run_server(port=os.getenv("CDSW_APP_PORT"))
+    # OR for local
+    # app.run_server(debug=True)
+  ```
+- Second, set the subdomain in CDSW's Applications tab.
+- Third, enter app.py in the Script field in CDSW's Applications tab.
+- Fourth, start the application within CDSW.
+- Finally, access demo at `subdomain.ffl-4.cdsw.eng.cloudera.com`
+
+
+### Launch the Application on CML
 There are two ways to launch the NeuralQA prototype on CML:
 
 1. **From Prototype Catalog** - Navigate to the Prototype Catalog on a CML workspace, select the "Active Learner" tile, click "Launch as Project", click "Configure Project"
 2. **As ML Prototype** - In a CML workspace, click "New Project", add a Project Name, select "ML Prototype" as the Initial Setup option, copy in the [repo URL](https://github.com/fastforwardlabs/active-learning-cml), click "Create Project", click "Configure Project"
 
 > Note: Active Learner depends on several heavy libraries (Pytorch, Dash, and so on). A minimum of 6GB memory instance is recommended to run this template.
-## How to use
 
-
-# delete starting this point
-
-Remove `experiments` folder after review
-
-There are two ways to start the application.
-
-## As a normal python session
-
-Just type 
-  ```python
-  python app_new.py
-  ```
-
-## Within CDSW
-
-This can be set up as an application.
-
-- First, specify the port in app_new.py. 
-
-  ```python
-  app.run_server(port=os.getenv("CDSW_APP_PORT"))
-  ```
-
-- Second, set the Subdomain in CDSW's Applications tab.
-
-- Third, enter app.py in the Script field in CDSW's Applications tab.
-
-- Fourth, start the application within CDSW.
-
-- Finally, access demo at `subdomain.ffl-4.cdsw.eng.cloudera.com`
-
+## Acknowledgments
+The UMAP configuration is inspired from the DASH [example applications](https://dash-gallery.plotly.host/Portal/)
 
 ## To Do
 - Reset click should change or not display the "Training dataset has ... " examples
 - clean-up
-
-- Why the train error > validation error - done, fixed
-- Add refresh graphs button instead of flickering? - fixed
-- What's wrong with the epoch updates now? - fixed
-- Reset button click should restore the graphs as well - fixed
-- Review that AL is adding value to the process - done
-  Yes, it does. For instance, say we have 100 examples and train a model for 60 epochs
-  with random strategy, the val accuracy is then 78%. If we use entropy strategy we 
-  get around 83% by the end of 70 epochs. Although close this should ideally get better 
-  with more epochs .
-- The "label this image" option should disappear after training, either point to a different image
-  or just have "click a data point ..." message shown - fixed, minor exception
-- Exception/ bug: - fixed
-  ```
-    reset_clicks:  0
-    Exception on /_dash-update-component [POST]
-    Traceback (most recent call last):
-      File "/home/cdsw/.local/lib/python3.6/site-packages/flask/app.py", line 2447, in wsgi_app
-        response = self.full_dispatch_request()
-      File "/home/cdsw/.local/lib/python3.6/site-packages/flask/app.py", line 1952, in full_dispatch_request
-        rv = self.handle_user_exception(e)
-      File "/home/cdsw/.local/lib/python3.6/site-packages/flask/app.py", line 1821, in handle_user_exception
-        reraise(exc_type, exc_value, tb)
-      File "/home/cdsw/.local/lib/python3.6/site-packages/flask/_compat.py", line 39, in reraise
-        raise value
-      File "/home/cdsw/.local/lib/python3.6/site-packages/flask/app.py", line 1950, in full_dispatch_request
-        rv = self.dispatch_request()
-      File "/home/cdsw/.local/lib/python3.6/site-packages/flask/app.py", line 1936, in dispatch_request
-        return self.view_functions[rule.endpoint](**req.view_args)
-      File "/home/cdsw/.local/lib/python3.6/site-packages/dash/dash.py", line 1050, in dispatch
-        response.set_data(func(*args, outputs_list=outputs_list))
-      File "/home/cdsw/.local/lib/python3.6/site-packages/dash/dash.py", line 995, in add_context
-        _validate.validate_multi_return(output_spec, output_value, callback_id)
-      File "/home/cdsw/.local/lib/python3.6/site-packages/dash/_validate.py", line 116, in validate_multi_return
-        callback_id, repr(output_value)
-    dash.exceptions.InvalidCallbackReturnValue: The callback ..train.n_clicks.. is a multi-output.
-    Expected the output type to be a list or tuple but got:
-    None.
-  ```
-- Handle index point exception for "orig_x", it complained about size being 100 - fixed
-
 

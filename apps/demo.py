@@ -695,7 +695,7 @@ def demo_callbacks(app):
         reset_clicks
     ):
         print("reset_clicks: ", reset_clicks)
-        global EMB_HISTORY, prev_reset_clicks  
+        global EMB_HISTORY, prev_reset_clicks, data
         mesg = u'''Training dataset has {} datapoints'''.format(data.X.shape[0])
         if reset_clicks >= 1:
             # need to take care of training results

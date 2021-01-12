@@ -547,7 +547,6 @@ def demo_callbacks(app):
         lr_disabled = False
         
         # Plot layout
-        axes = dict(title="", showgrid=True, zeroline=False, showticklabels=False)            
         layout = go.Layout(
             showlegend=True,
             margin=dict(l=0, r=0, t=0, b=0),
@@ -690,7 +689,7 @@ def demo_callbacks(app):
         ],
         [
             Input("reset", "n_clicks")
-        ],
+        ]
     )
     def reset(
         reset_clicks
@@ -699,10 +698,6 @@ def demo_callbacks(app):
         global EMB_HISTORY, prev_reset_clicks  
         mesg = u'''Training dataset has {} datapoints'''.format(data.X.shape[0])
         if reset_clicks >= 1:
-            strategy_disabled = False
-            samplesize_disabled = False 
-            epochs_disabled = False 
-            lr_disabled = False
             # need to take care of training results
             if os.path.exists(model_dir):
                 try:
@@ -724,7 +719,7 @@ def demo_callbacks(app):
         ],
         [
             Input("graph-2d-plot-umap", "clickData")
-        ],
+        ]
     )
     def display_click_image(clickData):
         print("its div-plot-click-image")
@@ -838,7 +833,7 @@ def demo_callbacks(app):
         Output("div-plot-click-message", "children"),
         [
             Input("graph-2d-plot-umap", "clickData")
-        ],
+        ]
     )
     def display_click_message(clickData):
         # Displays message shown when a point in the graph is clicked
@@ -873,7 +868,7 @@ def demo_callbacks(app):
         Output("div-results-loss-graph", "figure"),
         [
             Input('loss-graph-update', 'n_intervals')
-        ],
+        ]
     )
     def display_loss_results(n):
         if 'train_obj' in vars() or 'train_obj' in globals():
@@ -920,7 +915,7 @@ def demo_callbacks(app):
         Output("div-results-acc-graph", "figure"),
         [
             Input('acc-graph-update', 'n_intervals')
-        ],
+        ]
     )
     def display_acc_results(n):
         if 'train_obj' in vars() or 'train_obj' in globals():
@@ -932,7 +927,6 @@ def demo_callbacks(app):
             y_train = []
             y_val = []          
         layout = go.Layout(
-            #title="loss",
             margin=go.layout.Margin(l=0, r=0, b=0, t=0),
             yaxis={
                 "title": "accuracy",

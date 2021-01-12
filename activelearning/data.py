@@ -111,8 +111,8 @@ class Data:
         return loader
 
     def load_prev_data(self):
-        loader = DataLoader(self.handler(self.X_Prev,
-                                         self.Y_Prev,
+        loader = DataLoader(self.handler(self.X_prev,
+                                         self.Y_prev,
                                          transform=self.transform),
                             shuffle=True,
                             batch_size=1000,

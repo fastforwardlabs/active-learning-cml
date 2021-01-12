@@ -11,3 +11,4 @@ models/*
 .pip/*
 .python_history/*
 .viminfo/*
+.vscode/*

@@ -76,6 +76,7 @@ These scripts leverage the stylesheets from the `assets` folder provide a UI to:
 - visualize the trained embeddings using UMAP, a dimension reductionality technique,
 - visualize model performance metric son trains and validation sets
 - and request labels for 10 selected datapoints from the user to retrain the model
+- the final model is saved in the "./models" directory for future use
 
 ### `data`
 ```

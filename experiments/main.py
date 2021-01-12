@@ -31,7 +31,9 @@ torch.cuda.manual_seed(seed)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
-model_dir = "./models/model_" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+if not os.path.exists("models"):
+    os.mkdir("models")
+model_dir = "models/model_" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 if __name__ == "__main__":
     dataset_name = "MNIST"

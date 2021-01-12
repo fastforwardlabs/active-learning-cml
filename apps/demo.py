@@ -79,9 +79,9 @@ data_transform = transforms.Compose([transforms.ToTensor(),
                                      transforms.Normalize((0.1307,),
                                                           (0.3081,))])
 # create relative models folder
-if not os.path.exists("./models"):
-    os.mkdir("./models")
-model_dir = "./models/model_" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+if not os.path.exists("models"):
+    os.mkdir("models")
+model_dir = "models/model_" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 handler = get_handler(dataset_name)
 n_classes = 10 
 seed = 123

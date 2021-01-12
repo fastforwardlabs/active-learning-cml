@@ -12,8 +12,8 @@ tasks:
     entity_label: install_deps
     script: /cml/install_deps.py
     arguments: None
-    cpu: 2
-    memory: 6
+    cpu: 4
+    memory: 16
     short_summary: Job to install dependencies and download training data.
     environment:
       TASK_TYPE: CREATE/RUN_JOB

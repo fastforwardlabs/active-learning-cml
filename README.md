@@ -22,7 +22,7 @@ available to us
 * Use a selection strategy to pick out points that are difficult for the machine
 * Request labels from human
 * Add these back into the labeled datapool
-* Repeat the training process and iterate
+* Repeat the training and labeling process until you have achieved your desired model performance
 
 We use the MNIST dataset to illustrate the active learning workflow. To start, 
 we train a convolutional neural network using only a few labeled datapoints. 

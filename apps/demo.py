@@ -390,6 +390,7 @@ def create_layout(app):
                                           ),
                                           html.Button(
                                               id="submit-button", 
+                                              n_clicks=0,
                                               children=["Submit"],
                                               style={
                                                   "text-align": "center",
@@ -587,7 +588,6 @@ def demo_callbacks(app):
                 (X_TOLB, X_NOLB) = data_to_label(strategy)
                 data.update_nolabel(X_NOLB)
                 data.update_tolabel(X_TOLB)
-                #print('x nolb shape {}'.format(data.X_NOLB.shape))
                 train_obj.update_data(data)
                 print('train obj x nolb shape {}'.format(train_obj.data.X_NOLB.shape))        
                 embeddings_tr = train_obj.get_trained_embedding()
@@ -615,11 +615,9 @@ def demo_callbacks(app):
                 '''
                 print("start training: ", datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
                 train_obj.train()
-                #train_obj = train_model(epochs, lr, model_dir)
                 (X_TOLB, X_NOLB) = data_to_label(strategy)
                 data.update_nolabel(X_NOLB)
                 data.update_tolabel(X_TOLB)
-                #print('x nolb shape {}'.format(data.X_NOLB.shape))
                 train_obj.update_data(data)
                 print('train obj x nolb shape {}'.format(train_obj.data.X_NOLB.shape))        
                 embeddings_tr = train_obj.get_trained_embedding()
@@ -684,19 +682,19 @@ def demo_callbacks(app):
 
     @app.callback(
         [
-            Output("train", "n_clicks"),
-            #Output('div-plot-label-message', 'children')
+            Output("train", "n_clicks")
         ],
         [
-            Input("reset", "n_clicks")
+            Input("reset", "n_clicks"),
+            Input("slider-samplesize", "value"),
         ]
     )
     def reset(
-        reset_clicks
+        reset_clicks,
+        samplesize
     ):
         print("reset_clicks: ", reset_clicks)
         global EMB_HISTORY, prev_reset_clicks, data
-        mesg = u'''Training dataset has {} datapoints'''.format(data.X.shape[0])
         if reset_clicks >= 1:
             # need to take care of training results
             if os.path.exists(model_dir):
@@ -706,10 +704,25 @@ def demo_callbacks(app):
                     print("Error: %s : %s" % (model_dir, e.strerror))
 
             EMB_HISTORY = None
+            train_ratio = samplesize/X_TR.shape[0]
+            print("train_ratio", train_ratio)
+            X_NOLB, X, Y_NOLB, Y = train_test_split(X_TR, Y_TR, 
+                                                    test_size=train_ratio, 
+                                                    random_state=seed,
+                                                    shuffle=True)
+            X_TOLB = torch.empty([10, 28, 28], dtype=torch.uint8)
+            '''
+            Make data and train objects
+            '''
+            data = Data(X, Y, X_TE, Y_TE, X_NOLB, X_TOLB, 
+                        data_transform, 
+                        handler, n_classes)     
+            print("data.X: ", data.X.shape)
+
             prev_reset_clicks = reset_clicks            
-            return  [0] #, mesg]
+            return  [0]
         print("prev_train_clicks: ", prev_train_clicks)
-        return [prev_train_clicks] #, mesg]
+        return [prev_train_clicks]
 
 
     @app.callback(
@@ -735,31 +748,14 @@ def demo_callbacks(app):
             clicked_idx = None
             if EMB_HISTORY is not None:
                 umap_embeddings = EMB_HISTORY[0]
-                #print(umap_embeddings)
-                '''
-                # Create a boolean mask of the point clicked, truth value exists at only one row
-                bool_mask_click = (
-                    umap_embeddings.loc[:, "dim1":"dim2"].eq(click_point_np).all(axis=1)
-                )
-                clicked_idx = umap_embeddings[bool_mask_click].index[0]
-                print(bool_mask_click)
-                '''
                 clicked_idx = np.where((umap_embeddings == (click_point_np)).all(axis=1))[0][0]
-                
                 print(clicked_idx)
             else:
                 umap_embeddings = umap_embeddings_random
                 clicked_idx = np.where((umap_embeddings == (click_point_np)).all(axis=1))[0][0]
                 print(clicked_idx)
                 
-            # Retrieve the index of the point clicked, given it is present in the set
-            # if bool_mask_click.any():
-            # if clicked_idx is not None:    
-
-            # Retrieve the image corresponding to the index
-            #image_vector = data_dict[dataset].iloc[clicked_idx]
             image_vector = orig_x[clicked_idx]
-            #print(type(data.X_TOLB))
             X_tolb_index = None
             if labels_text[clicked_idx] == "to label":
                 X_tolb_index = np.where((data.X_TOLB.numpy() == image_vector).all((1,2)))[0][0]
@@ -799,6 +795,7 @@ def demo_callbacks(app):
                             ),
                             html.Button(
                                 id="submit-button", 
+                                n_clicks=0,
                                 children=["Submit"],
                                 style={
                                     "text-align": "center",
@@ -845,12 +842,14 @@ def demo_callbacks(app):
           
     @app.callback(
         Output('div-plot-label-message', 'children'),
-        [Input('submit-button', 'n_clicks')],
+        [
+            Input('submit-button', 'n_clicks')
+        ],
         [State('input-label', 'value')]
     )
-    def update_output(n_clicks, input_label):
+    def update_output(submit_clicks, input_label):
         global data, labels_text
-        if n_clicks == 1: 
+        if submit_clicks > 0: 
             Y_TOLB = torch.tensor([input_label])
             print("y labeled: ", Y_TOLB)            
             print("data.X_TOLB: ", data.X_TOLB.shape)
@@ -861,7 +860,8 @@ def demo_callbacks(app):
             Y = torch.cat([data.Y, Y_TOLB], dim=0)
             data.update_data(X, Y)
             return u'''Training dataset has {} datapoints'''.format(data.X.shape[0])
-        return u''' '''
+        else:
+            return u''' '''
 
     
     @app.callback(

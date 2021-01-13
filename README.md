@@ -1,9 +1,9 @@
 # Active Learning Workflow Demo
-
 > Supervised machine learning, while powerful, needs labeled data to be
 effective. Active learning reduces the number of labeled examples needed to
 train a model, saving time and money while obtaining comparable performance to
 models trained with much more data.   
+    
 > This application is meant to serve as a complement to the [prototype](https://activelearner.fastforwardlabs.com/) 
 for the report we released on Learning with Limited Labeled Data. To build an 
 intuition for why active learning works, please see our blogpost - 
@@ -12,7 +12,6 @@ intuition for why active learning works, please see our blogpost -
 ![AL Screenshot](docs/images/al.png)
 
 ## What is Active Learning?
-
 Active learning is an iterative process, and relies on human input to build up a
 smartly labeled dataset. The process typically looks like this:
 
@@ -33,35 +32,27 @@ the embeddings of the convolutional neural network by using UMAP to project the
 high dimensional representation down to 2D. 
 
 ## Structure
-
 ```
 .
 ├── activelearning        # active learning scripts
 ├── apps                  # Dash application
 ├── assets                # Dash related stylesheets
-├── cml                   # contains scripts that facilitate the project launch on CML.
+├── cml                   # contains scripts that facilitate the project launch on CML
 ├── data                  # contains MNIST data.
 ├── docs                  # images/ snapshots for README
-├── experiments           # Contains a script that demonstrate the use of active learning functions
+├── experiments           # contains a script that demonstrates the use of AL functions
 ```
-
-The `assets`, `data`, `docs`, and `experiments` directories are unimportant and 
-can be ignored. 
+The `assets`, `data`, and `docs` directories are unimportant and can be ignored. 
 
 ### `activelearning`
 ```
 activelearning
-├── data.py
-├── dataset.py
-├── model.py
-├── sample.py
-└── train.py
+├── data.py               # loads train and validation data
+├── dataset.py            # MNIST dataset handler
+├── model.py              # Neural network architecture
+├── sample.py             # defines random, entropy and entropy dropout selection strategies
+└── train.py              # helper functions for model training, generating embeddings and predictions, computing metrics, checkpointing, saving results in text file and so on
 ```
-- `data.py` loads train and validation data
-- `dataset.py` MNIST dataset handler
-- `model.py` Neural network architecture
-- `sample.py` defines random, entropy and entropy dropout selection strategies
-- `train.py` helper functions for model training, generating embeddings and predictions, computing metrics, checkpointing, saving results in text file and so on
 
 ### `apps` 
 ```
@@ -71,12 +62,12 @@ apps
 ├── demo_description.md
 ├── demo_intro.md
 ```
-These scripts leverage the stylesheets from the `assets` folder provide a UI to:
-- train a model based on the user selected hyperparameters,
-- visualize the trained embeddings using UMAP, a dimension reductionality technique,
-- visualize model performance metric son trains and validation sets
+These scripts leverage the stylesheets from the `assets` folder to provide a UI for:
+- training a model based on the user selected hyperparameters,
+- visualize the trained embeddings using UMAP
+- visualize model performance metrics on trains and validation sets
 - and request labels for 10 selected datapoints from the user to retrain the model
-- the final model is saved in the "./models" directory for future use
+- the final model is saved in the "/models" directory for future use
 
 ### `data`
 ```
@@ -97,9 +88,11 @@ points.
 To go from a fresh clone of the repo to the final state, follow these instructions in order.
 
 ### Installation
-The code and applications within were developed against Python 3.6.9, and are likely also to function with more recent versions of Python. We relied on GPUs for much of the analysis and use a version of PyTorch optimized for CUDA 10.2. 
+The code and applications were developed using Python 3.6.9, and are likely also to function with more 
+recent versions of Python. 
 
-To install dependencies, first create and activate a new virtual environment through your preferred means, then pip install from the requirements file. I recommend:
+To install dependencies, first create and activate a new virtual environment through your preferred means, 
+then pip install from the requirements file. We recommend:
 
 ```python
 python3 -m venv .venv
@@ -107,23 +100,25 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-In CML or CDSW, no virtual env is necessary. Instead, inside a Python 3 session (with at least 2 vCPU / 4 GiB Memory), simply run
+In CML or CDSW, no virtual env is necessary. Instead, inside a Python 3 session 
+(with at least 4 vCPU / 6 GiB Memory), simply run
 
 ```python
 !pip3 install -r requirements.txt     # notice `pip3`, not `pip`
 ```
 
 #### As a normal python session
-- First, uncomment the following lines in `app.py`
+- First, specify the port in app.py by uncommenting the lines for `normal python session`
   ```
-  # Uncomment the line below to run w/o CML or CDSW
+  # for normal python session uncomment below
   server = app.server
   
   # Running server
   if __name__ == '__main__':
-    # Uncomment, if you are running locally vs CDSW / CML
+    # for running on CDSW / CML uncomment below
     # app.run_server(port=os.getenv("CDSW_APP_PORT"))
-    # OR for local
+    # OR 
+    # for normal python session uncomment below
     app.run_server(debug=True)
   ```
 - Run
@@ -134,14 +129,15 @@ In CML or CDSW, no virtual env is necessary. Instead, inside a Python 3 session 
 #### Within CML or CDSW
 - First, specify the port in app.py. 
   ```
-  # Comment the line below to run w/o CML or CDSW
+  # for normal python session uncomment below
   # server = app.server
   
   # Running server
   if __name__ == '__main__':
-    # Uncomment if you are running locally vs CDSW / CML
+    # for running on CDSW / CML uncomment below
     app.run_server(port=os.getenv("CDSW_APP_PORT"))
-    # OR for local
+    # OR 
+    # for normal python session uncomment below
     # app.run_server(debug=True)
   ```
 - Second, set the subdomain in CDSW's Applications tab.
@@ -151,12 +147,16 @@ In CML or CDSW, no virtual env is necessary. Instead, inside a Python 3 session 
 
 
 ### Launch the Application on CML
-There are two ways to launch the NeuralQA prototype on CML:
+** Needs to be fixed based on Andrew's response **
+There are also two ways to launch the ActiveLearner prototype on CML:
 
-1. **From Prototype Catalog** - Navigate to the Prototype Catalog on a CML workspace, select the "Active Learner" tile, click "Launch as Project", click "Configure Project"
-2. **As ML Prototype** - In a CML workspace, click "New Project", add a Project Name, select "ML Prototype" as the Initial Setup option, copy in the [repo URL](https://github.com/fastforwardlabs/active-learning-cml), click "Create Project", click "Configure Project"
+1. **From Prototype Catalog** - Navigate to the Prototype Catalog on a CML workspace, select the 
+"Active Learner" tile, click "Launch as Project", click "Configure Project"
+2. **As ML Prototype** - In a CML workspace, click "New Project", add a Project Name, select 
+"ML Prototype" as the Initial Setup option, copy in the [repo URL](https://github.com/fastforwardlabs/active-learning-cml), click "Create Project", click "Configure Project"
 
-> Note: Active Learner depends on several heavy libraries (Pytorch, Dash, and so on). A minimum of 6GB memory instance is recommended to run this template.
+> Note: Active Learner depends on several heavy libraries (Pytorch, Dash, and so on). A minimum of 
+6GB memory instance is recommended to run this template.
 
 ## Acknowledgments
 The UMAP configuration is inspired from the DASH [example applications](https://dash-gallery.plotly.host/Portal/)

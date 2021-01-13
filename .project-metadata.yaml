@@ -13,7 +13,7 @@ tasks:
     script: /cml/install_deps.py
     arguments: None
     cpu: 4
-    memory: 16
+    memory: 6
     short_summary: Job to install dependencies and download training data.
     environment:
       TASK_TYPE: CREATE/RUN_JOB
@@ -33,7 +33,7 @@ tasks:
     description: Create a web application for active learning workflow. Note that this prototype requires a minimum of 2 CPUs and 6GB memory.
     script: /apps/app.py
     cpu: 4
-    memory: 16
+    memory: 6
     environment_variables:
       TASK_TYPE: START_APPLICATION
     kernel: python3

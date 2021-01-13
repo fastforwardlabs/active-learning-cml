@@ -10,7 +10,7 @@ tasks:
   - type: create_job
     name: Install dependencies
     entity_label: install_deps
-    script: /cml/install_deps.py
+    script: cml/install_deps.py
     arguments: None
     cpu: 4
     memory: 6
@@ -31,7 +31,7 @@ tasks:
     name: Active Learner 
     subdomain: al
     description: Create a web application for active learning workflow. Note that this prototype requires a minimum of 2 CPUs and 6GB memory.
-    script: /apps/app.py
+    script: apps/app.py
     cpu: 4
     memory: 6
     environment_variables:

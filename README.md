@@ -3,11 +3,11 @@
 > Supervised machine learning, while powerful, needs labeled data to be
 effective. Active learning reduces the number of labeled examples needed to
 train a model, saving time and money while obtaining comparable performance to
-models trained with much more data.
-> This application is meant to serve as a complement to the 
-[prototype](https://activelearner.fastforwardlabs.com/) for the report
-we released on Learning with Limited Labeled Data. To build an intuition for 
-why active learning works, please see our blogpost[Learning with Limited Labeled Data](https://blog.cloudera.com/a-guide-to-learning-with-limited-labeled-data/) 
+models trained with much more data.   
+> This application is meant to serve as a complement to the [prototype](https://activelearner.fastforwardlabs.com/) 
+for the report we released on Learning with Limited Labeled Data. To build an 
+intuition for why active learning works, please see our blogpost - 
+[A guide to learning with limited labeled data](https://blog.cloudera.com/a-guide-to-learning-with-limited-labeled-data/) 
 
 ![AL Screenshot](docs/images/al.png)
 
@@ -38,9 +38,9 @@ high dimensional representation down to 2D.
 .
 ├── activelearning        # active learning scripts
 ├── apps                  # Dash application
-├── assets                # Dash related assets
-├── cml                   # This folder contains scripts that facilitate the project launch on CML.
-├── data                  # This folder contains MNIST data.
+├── assets                # Dash related stylesheets
+├── cml                   # contains scripts that facilitate the project launch on CML.
+├── data                  # contains MNIST data.
 ├── docs                  # images/ snapshots for README
 ├── experiments           # Contains a script that demonstrate the use of active learning functions
 ```

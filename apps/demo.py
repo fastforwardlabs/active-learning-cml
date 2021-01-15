@@ -87,6 +87,7 @@ n_classes = 10
 seed = 123
 prev_reset_clicks = 0 
 prev_train_clicks = 0
+prev_submit_clicks = 0
 
 """
 Set random seeds for UMAP
@@ -328,8 +329,8 @@ def create_layout(app):
                                     html.Div(
                                         id="div-parameter-buttons",
                                         children=[
-                                            html.Button("Train", id="train", n_clicks=0),
-                                            html.Button("Reset", id="reset", 
+                                            html.Button("Train", id="train-button", n_clicks=0),
+                                            html.Button("Reset", id="reset-button", 
                                                 style={
                                                     "margin-left": "10px",
                                                 },
@@ -528,7 +529,7 @@ def demo_callbacks(app):
             #Output('div-plot-label-message', 'children')
         ],
         [            
-            Input("train", "n_clicks"),
+            Input("train-button", "n_clicks"),
             Input("strategy", "value"),
             Input("slider-samplesize", "value"),
             Input("slider-epochs", "value"),
@@ -668,12 +669,10 @@ def demo_callbacks(app):
                 umap_embeddings = np.concatenate((x, y), axis=1)
                 umap_embeddings_random = umap_embeddings
                 labels = data.Y.numpy()
-                #labels = np.random.randint(10, size=1000)
                 labels_text = [str(int(item)) for item in labels]
                 orig_x = data.X.numpy()
 
         embedding_df = pd.DataFrame(data=umap_embeddings, columns=["dim1", "dim2"])
-        #print(df)
         embedding_df['labels'] = labels_text
         groups = embedding_df.groupby("labels")
         figure = generate_figure_image(groups, layout)        
@@ -682,19 +681,17 @@ def demo_callbacks(app):
 
     @app.callback(
         [
-            Output("train", "n_clicks")
+            Output("train-button", "n_clicks")
         ],
         [
-            Input("reset", "n_clicks"),
-            Input("slider-samplesize", "value"),
+            Input("reset-button", "n_clicks")
         ]
     )
     def reset(
-        reset_clicks,
-        samplesize
+        reset_clicks
     ):
         print("reset_clicks: ", reset_clicks)
-        global EMB_HISTORY, prev_reset_clicks, data
+        global EMB_HISTORY, prev_reset_clicks
         if reset_clicks >= 1:
             # need to take care of training results
             if os.path.exists(model_dir):
@@ -704,24 +701,9 @@ def demo_callbacks(app):
                     print("Error: %s : %s" % (model_dir, e.strerror))
 
             EMB_HISTORY = None
-            train_ratio = samplesize/X_TR.shape[0]
-            print("train_ratio", train_ratio)
-            X_NOLB, X, Y_NOLB, Y = train_test_split(X_TR, Y_TR, 
-                                                    test_size=train_ratio, 
-                                                    random_state=seed,
-                                                    shuffle=True)
-            X_TOLB = torch.empty([10, 28, 28], dtype=torch.uint8)
-            '''
-            Make data and train objects
-            '''
-            data = Data(X, Y, X_TE, Y_TE, X_NOLB, X_TOLB, 
-                        data_transform, 
-                        handler, n_classes)     
-            print("data.X: ", data.X.shape)
-
             prev_reset_clicks = reset_clicks            
             return  [0]
-        print("prev_train_clicks: ", prev_train_clicks)
+        #print("prev_train_clicks: ", prev_train_clicks)
         return [prev_train_clicks]
 
 
@@ -735,7 +717,7 @@ def demo_callbacks(app):
         ]
     )
     def display_click_image(clickData):
-        print("its div-plot-click-image")
+        #print("its div-plot-click-image")
         global X_tolb_index
         if clickData:
             print(clickData)
@@ -749,17 +731,16 @@ def demo_callbacks(app):
             if EMB_HISTORY is not None:
                 umap_embeddings = EMB_HISTORY[0]
                 clicked_idx = np.where((umap_embeddings == (click_point_np)).all(axis=1))[0][0]
-                print(clicked_idx)
+                #print(clicked_idx)
             else:
                 umap_embeddings = umap_embeddings_random
                 clicked_idx = np.where((umap_embeddings == (click_point_np)).all(axis=1))[0][0]
-                print(clicked_idx)
+                #print(clicked_idx)
                 
             image_vector = orig_x[clicked_idx]
             X_tolb_index = None
             if labels_text[clicked_idx] == "to label":
                 X_tolb_index = np.where((data.X_TOLB.numpy() == image_vector).all((1,2)))[0][0]
-                #print("X_tolb_index: ", X_tolb_index)
             image_np = image_vector.reshape(28, 28).astype(np.float64)
 
             # Encode image into base 64
@@ -819,10 +800,41 @@ def demo_callbacks(app):
                     ),
                     html.Div(
                         style={"visibility": "hidden"},
+                        children=[
+                            dcc.Input(
+                                id="input-label",
+                                type="number", 
+                                min=0, max=9, 
+                                step=1, 
+                                placeholder=0,
+                                style={
+                                    "size": "120",
+                                    "text-align": "center",
+                                    "margin-top": "5px",
+                                    "margin-left": "50px",
+                                    "margin-right": "5px", 
+                                    "margin-bottom": "10px",
+                                    "font-weight": "bold",
+                                },
+                            ),
+                            html.Button(
+                                id="submit-button", 
+                                n_clicks=0,
+                                children=["Submit"],
+                                style={
+                                    "text-align": "center",
+                                    "margin-top": "5px",
+                                    "margin-left": "10px",
+                                    "margin-right": "5px", 
+                                    "margin-bottom": "10px",
+                                    "font-weight": "bold",
+                                },
+                            ),
+                        ],
                     )
                 )
         else:
-            print("no clickData")
+            #print("no clickData")
             return (None, None)
 
   
@@ -848,8 +860,10 @@ def demo_callbacks(app):
         [State('input-label', 'value')]
     )
     def update_output(submit_clicks, input_label):
-        global data, labels_text
+        global data, labels_text, prev_submit_clicks
+        #print("submit_clicks: ", submit_clicks)
         if submit_clicks > 0: 
+            prev_submit_clicks = submit_clicks
             Y_TOLB = torch.tensor([input_label])
             print("y labeled: ", Y_TOLB)            
             print("data.X_TOLB: ", data.X_TOLB.shape)

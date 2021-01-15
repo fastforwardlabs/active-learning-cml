@@ -146,8 +146,8 @@ In CML or CDSW, no virtual env is necessary. Instead, inside a Python 3 session
 - Finally, access demo at `subdomain.ffl-4.cdsw.eng.cloudera.com`
 
 
-### Launch the Application on CML
-** Needs to be fixed based on Andrew's response **
+### Launch the Application on CML 
+**Needs to be fixed based on Andrew's response**    
 There are also two ways to launch the ActiveLearner prototype on CML:
 
 1. **From Prototype Catalog** - Navigate to the Prototype Catalog on a CML workspace, select the 
@@ -160,8 +160,3 @@ There are also two ways to launch the ActiveLearner prototype on CML:
 
 ## Acknowledgments
 The UMAP configuration is inspired from the DASH [example applications](https://dash-gallery.plotly.host/Portal/)
-
-## To Do
-- Reset click should change or not display the "Training dataset has ... " examples
-- clean-up
-

@@ -238,9 +238,10 @@ def create_layout(app):
                     html.Div(
                         [
                             html.Img(
-                                src=app.get_asset_url("ff-logo.png"),
+                                src=app.get_asset_url("cloudera-fast-forward.png"),
                                 className="logo",
                                 id="plotly-image",
+                                style={'height':'70%', 'width':'70%'}
                             )
                         ],
                         className="three columns header_img",
@@ -878,7 +879,7 @@ def demo_callbacks(app):
         [State('input-label', 'value')]
     )
     def update_output(submit_clicks, input_label):
-        global data, labels_text, prev_submit_clicks
+        global data, labels_text, prev_submit_clicks, EMB_HISTORY, orig_x
         #print("submit_clicks: ", submit_clicks)
         if submit_clicks > 0: 
             prev_submit_clicks = submit_clicks
@@ -891,6 +892,39 @@ def demo_callbacks(app):
             X = torch.cat([data.X, data.X_TOLB[X_tolb_index].reshape(1, data.X_TOLB[X_tolb_index].shape[0], data.X_TOLB[X_tolb_index].shape[1])], dim=0)
             Y = torch.cat([data.Y, Y_TOLB], dim=0)
             data.update_data(X, Y)
+            print("data.X: ", data.X.shape)
+            print("data.Y: ", data.Y.shape)
+            
+            # update X_TOLB
+            print("type(data.X_TOLB): ", type(data.X_TOLB))
+            X_TOLB = torch.cat([data.X_TOLB[:X_tolb_index], data.X_TOLB[X_tolb_index+1:]])
+            data.update_tolabel(X_TOLB)
+            
+            orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)            
+            # update embedding history
+            '''
+            embeddings_tr = train_obj.get_trained_embedding()
+            embeddings_tolb = train_obj.get_tolb_embedding()
+            embeddings = np.concatenate((embeddings_tr, embeddings_tolb), axis=0)
+            '''
+            '''
+            embeddings = EMB_HISTORY[0]
+            
+            labels = np.concatenate((data.Y.numpy(),
+                                     np.ones(data.X_TOLB.shape[0])*15),
+                                    axis=0)
+            labels_text = [str(int(item)) for item in labels]
+            labels_text = ["to label" if x == "15" else x for x in labels_text]
+            #umap_embeddings = reducer.fit_transform(embeddings)
+            EMB_HISTORY = (embeddings, labels)
+            '''
+            '''
+            embedding_df = pd.DataFrame(data=umap_embeddings, columns=["dim1", "dim2"])
+            embedding_df['labels'] = labels_text
+            groups = embedding_df.groupby("labels")
+            #figure = generate_figure_image(groups, layout)        
+            '''
+            
             return u'''Training dataset has {} datapoints'''.format(data.X.shape[0])
         else:
             return u''' '''

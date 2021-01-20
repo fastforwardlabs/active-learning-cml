@@ -84,6 +84,13 @@ remaining training examples and continue to train a model with the additional da
 points. 
 - In the long run the model performance differs based on the selection strategy employed.
 
+### `experiments`
+```
+experiments
+├── main.py               # code to experiment and test the model training w/o UI
+```
+Note: You still need to go through the installation process below to be able to run this code
+
 ## Using the App
 To go from a fresh clone of the repo to the final state, follow these instructions in order.
 

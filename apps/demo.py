@@ -37,6 +37,13 @@
 #  DATA.
 #
 # ###########################################################################
+'''
+Code adapted from examples by Dash interactive Python framework developed by Plotly 
+
+https://dash-gallery.plotly.host/Portal/
+
+Specifically, the example: https://github.com/plotly/dash-sample-apps/tree/master/apps/dash-tsne/demo.py
+'''
 
 import base64
 import io
@@ -472,15 +479,26 @@ def demo_callbacks(app):
     def generate_figure_image(groups, layout):
         data = []
         for idx, val in groups:
-            scatter = go.Scatter(
-                name=idx,
-                x=val["dim1"],
-                y=val["dim2"],
-                text=[idx for _ in range(val["dim1"].shape[0])],
-                textposition="top center",
-                mode="markers",
-                marker=dict(size=7, symbol="circle"),
-            )
+            if idx == "to label":
+                scatter = go.Scatter(
+                  name=idx,
+                  x=val["dim1"],
+                  y=val["dim2"],
+                  text=[idx for _ in range(val["dim1"].shape[0])],
+                  textposition="top center",
+                  mode="markers",
+                  marker=dict(size=10, symbol="star"),
+                )
+            else:  
+                scatter = go.Scatter(
+                    name=idx,
+                    x=val["dim1"],
+                    y=val["dim2"],
+                    text=[idx for _ in range(val["dim1"].shape[0])],
+                    textposition="top center",
+                    mode="markers",
+                    marker=dict(size=7, symbol="circle"),
+                )
             data.append(scatter)
         figure = go.Figure(data=data, layout=layout)
         return figure

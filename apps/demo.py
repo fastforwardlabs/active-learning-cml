@@ -887,7 +887,25 @@ def demo_callbacks(app):
             print("y labeled: ", Y_TOLB)            
             print("data.X_TOLB: ", data.X_TOLB.shape)
             print("X_tolb_index: ", X_tolb_index)
-            labels_text[X_tolb_index] = str(int(Y_TOLB))
+            
+            # make a copy of the current embeddings
+            
+            prev_embeddings = EMB_HISTORY[0]
+            print("prev_embeddings: ", type(prev_embeddings))
+            print("prev_embeddings.shape: ", prev_embeddings.shape)
+            print("data.X: ", data.X.shape[0])
+            print("prev_embeddings[data.X.shape[0]+X_tolb_index].shape", prev_embeddings[data.X.shape[0]+X_tolb_index].shape)
+            print("prev_embeddings[data.X.shape[0]+X_tolb_index]", prev_embeddings[data.X.shape[0]+X_tolb_index])
+            print("prev_embeddings[data.X.shape[0]+X_tolb_index].shape[0]", prev_embeddings[data.X.shape[0]+X_tolb_index].shape[0])
+            
+            # update embedding history w/o refitting
+            embeddings = np.concatenate((prev_embeddings[:data.X.shape[0]],
+                                     prev_embeddings[data.X.shape[0]+X_tolb_index].reshape(1, prev_embeddings[data.X.shape[0]+X_tolb_index].shape[0]),
+                                     prev_embeddings[data.X.shape[0]:data.X.shape[0]+X_tolb_index],
+                                     prev_embeddings[data.X.shape[0]+X_tolb_index+1:]
+                                        ), axis=0)
+            print("embeddings.shape: ", embeddings.shape)
+            
             # how to get corresponding X_TOLB?
             X = torch.cat([data.X, data.X_TOLB[X_tolb_index].reshape(1, data.X_TOLB[X_tolb_index].shape[0], data.X_TOLB[X_tolb_index].shape[1])], dim=0)
             Y = torch.cat([data.Y, Y_TOLB], dim=0)
@@ -899,8 +917,21 @@ def demo_callbacks(app):
             print("type(data.X_TOLB): ", type(data.X_TOLB))
             X_TOLB = torch.cat([data.X_TOLB[:X_tolb_index], data.X_TOLB[X_tolb_index+1:]])
             data.update_tolabel(X_TOLB)
+            print("orig_x.shape", orig_x.shape)
+            orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)   
+            print("orig_x.shape", orig_x.shape)
             
-            orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)            
+            # update labels_text
+            # this is wrong, labels_text is a concat of Y and Y_TOLB
+            # labels_text[X_tolb_index] = str(int(Y_TOLB))
+            labels = np.concatenate((data.Y.numpy(),
+                                     np.ones(data.X_TOLB.shape[0])*15),
+                                    axis=0)
+            labels_text = [str(int(item)) for item in labels]
+            labels_text = ["to label" if x == "15" else x for x in labels_text]
+
+            EMB_HISTORY = (embeddings, labels)
+            
             # update embedding history
             '''
             embeddings_tr = train_obj.get_trained_embedding()

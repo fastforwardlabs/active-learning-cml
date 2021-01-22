@@ -87,12 +87,17 @@ points.
 ### `experiments`
 ```
 experiments
-├── main.py               # code to experiment and test the model training w/o UI
+├── main.py               # code to experiment and test data and model functions w/o UI
 ```
 Note: You still need to go through the installation process below to be able to run this code
 
-## Using the App
-To go from a fresh clone of the repo to the final state, follow these instructions in order.
+## Deploying on CML
+
+There are three ways to launch this project on CML:
+
+1. **From Prototype Catalog** - Navigate to the Prototype Catalog on a CML workspace, select the "Active Learning" tile, click "Launch as Project", click "Configure Project"
+2. **As ML Prototype** - In a CML workspace, click "New Project", add a Project Name, select "ML Prototype" as the Initial Setup option, copy in the [repo URL](https://github.com/cloudera/CML_AMP_Active_Learning), click "Create Project", click "Configure Project"
+3. **Manual Setup** - In a CML workspace, click "New Project", add a Project Name, select "Git" as the Initial Setup option, copy in the [repo URL](https://github.com/cloudera/CML_AMP_Active_learning), click "Create Project". Then, follow the installation instructions below.
 
 ### Installation
 The code and applications were developed using Python 3.6.9, and are likely also to function with more 
@@ -114,7 +119,7 @@ In CML or CDSW, no virtual env is necessary. Instead, inside a Python 3 session
 !pip3 install -r requirements.txt     # notice `pip3`, not `pip`
 ```
 
-#### As a normal python session
+#### Starting the application as a normal python session
 - First, specify the port in app.py by uncommenting the lines for `normal python session`
   ```
   # for normal python session uncomment below
@@ -133,7 +138,7 @@ In CML or CDSW, no virtual env is necessary. Instead, inside a Python 3 session
   python app.py
   ```
 
-#### Within CML or CDSW
+#### Starting the application within CML or CDSW
 - First, specify the port in app.py. 
   ```
   # for normal python session uncomment below
@@ -151,19 +156,3 @@ In CML or CDSW, no virtual env is necessary. Instead, inside a Python 3 session
 - Third, enter app.py in the Script field in CDSW's Applications tab.
 - Fourth, start the application within CDSW.
 - Finally, access demo at `subdomain.ffl-4.cdsw.eng.cloudera.com`
-
-
-### Launch the Application on CML 
-**Needs to be fixed based on Andrew's response**    
-There are also two ways to launch the ActiveLearner prototype on CML:
-
-1. **From Prototype Catalog** - Navigate to the Prototype Catalog on a CML workspace, select the 
-"Active Learner" tile, click "Launch as Project", click "Configure Project"
-2. **As ML Prototype** - In a CML workspace, click "New Project", add a Project Name, select 
-"ML Prototype" as the Initial Setup option, copy in the [repo URL](https://github.com/fastforwardlabs/active-learning-cml), click "Create Project", click "Configure Project"
-
-> Note: Active Learner depends on several heavy libraries (Pytorch, Dash, and so on). A minimum of 
-6GB memory instance is recommended to run this template.
-
-## Acknowledgments
-The UMAP configuration is inspired from the DASH [example applications](https://dash-gallery.plotly.host/Portal/)

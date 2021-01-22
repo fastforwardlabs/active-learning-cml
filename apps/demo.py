@@ -1,7 +1,7 @@
 # ###########################################################################
 #
 #  CLOUDERA APPLIED MACHINE LEARNING PROTOTYPE (AMP)
-#  (C) Cloudera, Inc. 2020
+#  (C) Cloudera, Inc. 2021
 #  All rights reserved.
 #
 #  Applicable Open Source License: Apache 2.0
@@ -241,9 +241,10 @@ def create_layout(app):
                                 src=app.get_asset_url("cloudera-fast-forward.png"),
                                 className="logo",
                                 id="plotly-image",
-                                style={'height':'70%', 'width':'70%'}
+                                style={'height':'80%', 'width':'80%'}
                             )
                         ],
+                        style={'textAlign': 'center'},
                         className="three columns header_img",
                     ),
                     html.Div(
@@ -880,8 +881,8 @@ def demo_callbacks(app):
     )
     def update_output(submit_clicks, input_label):
         global data, labels_text, prev_submit_clicks, EMB_HISTORY, orig_x
-        #print("submit_clicks: ", submit_clicks)
-        if submit_clicks > 0: 
+        print("submit_clicks: ", submit_clicks)
+        if submit_clicks == 1: 
             prev_submit_clicks = submit_clicks
             Y_TOLB = torch.tensor([input_label])
             print("y labeled: ", Y_TOLB)            
@@ -889,22 +890,13 @@ def demo_callbacks(app):
             print("X_tolb_index: ", X_tolb_index)
             
             # make a copy of the current embeddings
-            
             prev_embeddings = EMB_HISTORY[0]
-            print("prev_embeddings: ", type(prev_embeddings))
-            print("prev_embeddings.shape: ", prev_embeddings.shape)
-            print("data.X: ", data.X.shape[0])
-            print("prev_embeddings[data.X.shape[0]+X_tolb_index].shape", prev_embeddings[data.X.shape[0]+X_tolb_index].shape)
-            print("prev_embeddings[data.X.shape[0]+X_tolb_index]", prev_embeddings[data.X.shape[0]+X_tolb_index])
-            print("prev_embeddings[data.X.shape[0]+X_tolb_index].shape[0]", prev_embeddings[data.X.shape[0]+X_tolb_index].shape[0])
-            
             # update embedding history w/o refitting
             embeddings = np.concatenate((prev_embeddings[:data.X.shape[0]],
                                      prev_embeddings[data.X.shape[0]+X_tolb_index].reshape(1, prev_embeddings[data.X.shape[0]+X_tolb_index].shape[0]),
                                      prev_embeddings[data.X.shape[0]:data.X.shape[0]+X_tolb_index],
                                      prev_embeddings[data.X.shape[0]+X_tolb_index+1:]
                                         ), axis=0)
-            print("embeddings.shape: ", embeddings.shape)
             
             # how to get corresponding X_TOLB?
             X = torch.cat([data.X, data.X_TOLB[X_tolb_index].reshape(1, data.X_TOLB[X_tolb_index].shape[0], data.X_TOLB[X_tolb_index].shape[1])], dim=0)
@@ -913,49 +905,20 @@ def demo_callbacks(app):
             print("data.X: ", data.X.shape)
             print("data.Y: ", data.Y.shape)
             
-            # update X_TOLB
-            print("type(data.X_TOLB): ", type(data.X_TOLB))
+            # update X_TOLB and orig_x
             X_TOLB = torch.cat([data.X_TOLB[:X_tolb_index], data.X_TOLB[X_tolb_index+1:]])
             data.update_tolabel(X_TOLB)
-            print("orig_x.shape", orig_x.shape)
             orig_x = np.concatenate((data.X.numpy(), data.X_TOLB.numpy()),axis=0)   
-            print("orig_x.shape", orig_x.shape)
             
             # update labels_text
-            # this is wrong, labels_text is a concat of Y and Y_TOLB
-            # labels_text[X_tolb_index] = str(int(Y_TOLB))
             labels = np.concatenate((data.Y.numpy(),
                                      np.ones(data.X_TOLB.shape[0])*15),
                                     axis=0)
             labels_text = [str(int(item)) for item in labels]
             labels_text = ["to label" if x == "15" else x for x in labels_text]
 
-            EMB_HISTORY = (embeddings, labels)
-            
             # update embedding history
-            '''
-            embeddings_tr = train_obj.get_trained_embedding()
-            embeddings_tolb = train_obj.get_tolb_embedding()
-            embeddings = np.concatenate((embeddings_tr, embeddings_tolb), axis=0)
-            '''
-            '''
-            embeddings = EMB_HISTORY[0]
-            
-            labels = np.concatenate((data.Y.numpy(),
-                                     np.ones(data.X_TOLB.shape[0])*15),
-                                    axis=0)
-            labels_text = [str(int(item)) for item in labels]
-            labels_text = ["to label" if x == "15" else x for x in labels_text]
-            #umap_embeddings = reducer.fit_transform(embeddings)
-            EMB_HISTORY = (embeddings, labels)
-            '''
-            '''
-            embedding_df = pd.DataFrame(data=umap_embeddings, columns=["dim1", "dim2"])
-            embedding_df['labels'] = labels_text
-            groups = embedding_df.groupby("labels")
-            #figure = generate_figure_image(groups, layout)        
-            '''
-            
+            EMB_HISTORY = (embeddings, labels)            
             return u'''Training dataset has {} datapoints'''.format(data.X.shape[0])
         else:
             return u''' '''

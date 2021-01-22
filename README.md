@@ -1,4 +1,4 @@
-# Active Learning Workflow Demo
+# Interactive and visual workflow of active learning
 > Supervised machine learning, while powerful, needs labeled data to be
 effective. Active learning reduces the number of labeled examples needed to
 train a model, saving time and money while obtaining comparable performance to

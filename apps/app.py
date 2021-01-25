@@ -37,10 +37,6 @@
 #  DATA.
 #
 # ###########################################################################
-'''
-The following code has been adapted from Python Dash Gallery
-Specifically, the example: https://github.com/plotly/dash-sample-apps/blob/master/apps/dash-tsne/app.py
-'''
 import os
 import dash
 

@@ -73,8 +73,6 @@ class Train:
     def train(self):
         print('train:train with {} datapoints'.format(self.data.X.shape[0]))
         checkpoint_fpath = os.path.join(self.model_dir, 'checkpoint.pt')
-        #print(checkpoint_fpath)
-        #self.clf = self.clf(n_classes=self.data.n_classes).to(self.device)
         
         optimizer = optim.SGD(self.clf.parameters(), lr=self.lr, momentum=0.5)
         start_epoch = 1
@@ -116,6 +114,10 @@ class Train:
         }
         self.save_checkpoint(checkpoint, self.model_dir)
 
+    '''
+    The following function is adapted from the original Pytorch example code:
+    https://github.com/pytorch/examples/blob/master/mnist/main.py
+    '''
     def _train(self, train_loader, optimizer, epoch):
         self.clf.train()
         train_loss = 0
@@ -142,6 +144,10 @@ class Train:
         self.train_loss.append(train_loss)
         self.train_acc.append(correct / len(train_loader.dataset))
 
+    '''
+    The following function is adapted from the original Pytorch example code:
+    https://github.com/pytorch/examples/blob/master/mnist/main.py
+    '''
     def _test(self, test_loader, epoch):
         self.clf.eval()
         test_loss = 0

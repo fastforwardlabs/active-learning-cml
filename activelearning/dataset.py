@@ -78,7 +78,6 @@ class MNISTHandler(Dataset):
         if self.transform is not None:
             x = Image.fromarray(x.numpy(), mode='L')
             x = self.transform(x)
-            #print("x.shape: ", x.shape)
         return x, y, index
 
     def __len__(self):

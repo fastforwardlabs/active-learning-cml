@@ -1,10 +1,4 @@
 /*
-Code adapted from examples by Dash interactive Python framework developed by Plotly 
-
-https://dash-gallery.plotly.host/Portal/
-
-Specifically, the example: https://github.com/plotly/dash-sample-apps/tree/master/apps/dash-tsne
-
 # ###########################################################################
 #
 #  CLOUDERA APPLIED MACHINE LEARNING PROTOTYPE (AMP)
@@ -44,6 +38,9 @@ Specifically, the example: https://github.com/plotly/dash-sample-apps/tree/maste
 #  DATA.
 #
 # ###########################################################################
+The following code has been copied from an example in Python Dash Gallery, found at: 
+
+https://github.com/plotly/dash-sample-apps/blob/master/apps/dash-tsne/assets/ss4.css
 */
 
 /* latin-ext */

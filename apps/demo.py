@@ -37,13 +37,6 @@
 #  DATA.
 #
 # ###########################################################################
-'''
-Code adapted from examples by Dash interactive Python framework developed by Plotly 
-
-https://dash-gallery.plotly.host/Portal/
-
-Specifically, the example: https://github.com/plotly/dash-sample-apps/tree/master/apps/dash-tsne/demo.py
-'''
 
 import base64
 import io
@@ -153,6 +146,10 @@ def data_to_label(strategy):
         X_TOLB, X_NOLB = sample.entropy_dropout(10, 5)
     return (X_TOLB, X_NOLB)
 
+'''
+The following function has been copied from an example in Python Dash Gallery,
+found at: https://github.com/plotly/dash-sample-apps/tree/master/apps/dash-tsne/demo.py
+'''
 def numpy_to_b64(array, scalar=True):
     # Convert from 0-1 to 0-255
     if scalar:
@@ -164,6 +161,10 @@ def numpy_to_b64(array, scalar=True):
     im_b64 = base64.b64encode(buff.getvalue()).decode("utf-8")
     return im_b64
 
+'''
+The following function has been copied from an example in Python Dash Gallery,
+found at: https://github.com/plotly/dash-sample-apps/tree/master/apps/dash-tsne/demo.py
+'''
 def create_img(arr, shape=(28, 28)):
     arr = arr.reshape(shape).astype(np.float64)
     image_b64 = numpy_to_b64(arr)
@@ -176,10 +177,18 @@ with open(PATH.joinpath("demo_intro.md"), "r") as file:
 with open(PATH.joinpath("demo_description.md"), "r") as file:
   demo_description_md = file.read()
 
+'''
+The following function has been copied from an example in Python Dash Gallery,
+found at: https://github.com/plotly/dash-sample-apps/tree/master/apps/dash-tsne/demo.py
+'''
 # Methods for creating components in the layout code
 def Card(children, **kwargs):
     return html.Section(children, className="card-style")
 
+'''
+The following function has been copied from an example in Python Dash Gallery,
+found at: https://github.com/plotly/dash-sample-apps/tree/master/apps/dash-tsne/demo.py
+'''
 def NamedSlider(name, short, min, max, step, val, marks=None):
     if marks:
         step = None
@@ -206,7 +215,10 @@ def NamedSlider(name, short, min, max, step, val, marks=None):
         ],
     )
 
-
+'''
+The following function has been adapted from an example in Python Dash Gallery,
+found at: https://github.com/plotly/dash-sample-apps/tree/master/apps/dash-tsne/demo.py
+'''
 def NamedInlineRadioItems(name, short, options, val, **kwargs):
     return html.Div(
         id=f"div-{short}",
@@ -223,6 +235,10 @@ def NamedInlineRadioItems(name, short, options, val, **kwargs):
         ],
     )
 
+'''
+The following function has been adapted from an example in Python Dash Gallery,
+found at: https://github.com/plotly/dash-sample-apps/tree/master/apps/dash-tsne/demo.py
+'''
 def create_layout(app):
     # Actual layout of the app
     return html.Div(
@@ -473,12 +489,17 @@ def create_layout(app):
 
         ],
     )
-  
+
+
 def demo_callbacks(app):
     '''
-    generates the scatter plot based on embedding data
+    The following function has been adapted an the example in Python Dash Gallery,
+    found at: https://github.com/plotly/dash-sample-apps/tree/master/apps/dash-tsne/demo.py
     '''
     def generate_figure_image(groups, layout):
+        '''
+        generates the scatter plot based on embedding data
+        '''
         data = []
         for idx, val in groups:
             if idx == "to label":
@@ -505,7 +526,10 @@ def demo_callbacks(app):
         figure = go.Figure(data=data, layout=layout)
         return figure
 
-
+    '''
+    The following function has been adapted from an example in Python Dash Gallery,
+    found at: https://github.com/plotly/dash-sample-apps/tree/master/apps/dash-tsne/demo.py
+    '''
     # Callback function for the learn-more button
     @app.callback(
         [
@@ -537,7 +561,10 @@ def demo_callbacks(app):
                 "Learn More",
             )
 
-
+    '''
+    The following function has been adapted from an example in Python Dash Gallery,
+    found at: https://github.com/plotly/dash-sample-apps/tree/master/apps/dash-tsne/demo.py
+    '''
     @app.callback(
         [
             Output("graph-2d-plot-umap", "figure"),
@@ -726,7 +753,10 @@ def demo_callbacks(app):
         #print("prev_train_clicks: ", prev_train_clicks)
         return [prev_train_clicks]
 
-
+    '''
+    The following function has been inspired from an example in Python Dash Gallery,
+    found at: https://github.com/plotly/dash-sample-apps/tree/master/apps/dash-tsne/demo.py
+    '''
     @app.callback(
         [
             Output("div-plot-click-image", "children"),
@@ -923,7 +953,10 @@ def demo_callbacks(app):
         else:
             return u''' '''
 
-    
+    '''
+    The following function has been inspired from an example in Python Dash Gallery,
+    found at: https://github.com/plotly/dash-sample-apps/blob/master/apps/dash-live-model-training/app.py
+    '''    
     @app.callback(
         Output("div-results-loss-graph", "figure"),
         [
@@ -970,7 +1003,10 @@ def demo_callbacks(app):
         figure = go.Figure(data=[trace_train, trace_val], layout=layout)
         return figure
 
-    
+    '''
+    The following function has been inspired from an example in Python Dash Gallery,
+    found at: https://github.com/plotly/dash-sample-apps/blob/master/apps/dash-live-model-training/app.py
+    '''        
     @app.callback(
         Output("div-results-acc-graph", "figure"),
         [

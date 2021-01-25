@@ -69,6 +69,13 @@ These scripts leverage the stylesheets from the `assets` folder to provide a UI 
 - and request labels for 10 selected datapoints from the user to retrain the model
 - the final model is saved in the "/models" directory for future use
 
+### `experiments`
+```
+experiments
+├── main.py               # code to experiment and test data and model functions w/o UI
+```
+Note: You still need to go through the installation process below to be able to run this code
+
 ### `data`
 ```
 data
@@ -83,13 +90,6 @@ initial labeled examples while the rest are unlabeled.
 remaining training examples and continue to train a model with the additional data 
 points. 
 - In the long run the model performance differs based on the selection strategy employed.
-
-### `experiments`
-```
-experiments
-├── main.py               # code to experiment and test data and model functions w/o UI
-```
-Note: You still need to go through the installation process below to be able to run this code
 
 ## Deploying on CML
 
@@ -139,7 +139,7 @@ In CML or CDSW, no virtual env is necessary. Instead, inside a Python 3 session
   ```
 
 #### Starting the application within CML or CDSW
-- First, specify the port in app.py. 
+- First, specify the port in app.py by commenting the lines for `normal python session` 
   ```
   # for normal python session uncomment below
   # server = app.server

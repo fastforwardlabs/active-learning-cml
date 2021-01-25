@@ -43,16 +43,14 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torch.nn as nn
 
-
 def get_net(name):
     if name == 'MNIST':
         return Net
 
 '''
-Following NN architecture code adapted from Pytorch example code
+Following NN architecture code has been copied from Pytorch example code:
 https://github.com/pytorch/examples/blob/master/mnist/main.py
 '''
-
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()

@@ -1,19 +1,4 @@
 /*
-* Skeleton V2.0.4
-* Copyright 2014, Dave Gamache
-* www.getskeleton.com
-* Free to use under the MIT license.
-* http://www.opensource.org/licenses/mit-license.php
-* 12/29/2014
-*/
-
-/*
-Almost entire code adapted from examples by Dash interactive Python framework examples developed by Plotly 
-
-https://dash-gallery.plotly.host/Portal/
-
-Specifically, the example: https://github.com/plotly/dash-sample-apps/tree/master/apps/dash-tsne
-
 # ###########################################################################
 #
 #  CLOUDERA APPLIED MACHINE LEARNING PROTOTYPE (AMP)
@@ -53,6 +38,18 @@ Specifically, the example: https://github.com/plotly/dash-sample-apps/tree/maste
 #  DATA.
 #
 # ###########################################################################
+The following code has been copied from an example in Python Dash Gallery, found at: 
+
+https://github.com/plotly/dash-sample-apps/blob/master/apps/dash-tsne/assets/ss2.css
+
+which was originally copied from
+
+* Skeleton V2.0.4
+* Copyright 2014, Dave Gamache
+* www.getskeleton.com
+* Free to use under the MIT license.
+* http://www.opensource.org/licenses/mit-license.php
+* 12/29/2014
 */
 
 /* Table of contents

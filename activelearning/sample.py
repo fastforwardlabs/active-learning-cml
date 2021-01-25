@@ -109,5 +109,3 @@ class Sample():
         data_to_label = X_NOLB_tmp[:n]
         X_NOLB = X_NOLB_tmp[n:]
         return data_to_label, X_NOLB
-        
-        

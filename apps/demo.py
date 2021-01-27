@@ -887,7 +887,10 @@ def demo_callbacks(app):
             #print("no clickData")
             return (None, None)
 
-  
+    '''
+    The following function has been adapted from an example in Python Dash Gallery,
+    found at: https://github.com/plotly/dash-sample-apps/tree/master/apps/dash-tsne/demo.py
+    '''
     @app.callback(
         Output("div-plot-click-message", "children"),
         [

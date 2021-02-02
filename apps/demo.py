@@ -373,7 +373,9 @@ def create_layout(app):
                         className="six columns",
                         children=[
                             dcc.Graph(id="graph-2d-plot-umap", 
-                                      style={"height": "78vh"}
+                                      style={
+                                          "height": "78vh",
+                                      }
                                      )
                         ],
                     ),
@@ -597,8 +599,18 @@ def demo_callbacks(app):
         
         # Plot layout
         layout = go.Layout(
+            title = dict(text="Visualization of image embeddings",
+                         xanchor="center",
+                         yanchor="middle",
+                         x=0.5
+                      ),
+            titlefont = dict(
+                family = 'Arial, sans-serif',
+                size = 20,
+                color = '#6c7182'
+            ),
             showlegend=True,
-            margin=dict(l=0, r=0, t=0, b=0),
+            margin=dict(l=0, r=0, t=50, b=0),
             xaxis = dict(autorange=True,
                          showgrid=False,
                          showline=False,
@@ -613,7 +625,8 @@ def demo_callbacks(app):
                          showticklabels=False),
             legend=dict(yanchor="top",
                         y=0.99,xanchor="left",
-                        x=0.01)
+                        x=0.01),
+            paper_bgcolor="#f2f3f4"
         )
         global data, train_obj, EMB_HISTORY, orig_x, umap_embeddings_random, labels_text, prev_train_clicks
         print("train_clicks: ", train_clicks)
@@ -976,7 +989,17 @@ def demo_callbacks(app):
             y_train = []
             y_val = []            
         layout = go.Layout(
-            margin=go.layout.Margin(l=0, r=0, b=0, t=0),
+            title = dict(text="Training and Validation Loss",
+                         xanchor="center",
+                         yanchor="middle",
+                         x=0.5
+                        ),
+            titlefont = dict(
+                family = 'Arial, sans-serif',
+                size = 15,
+                color = '#6c7182'
+            ),
+            margin=go.layout.Margin(l=0, r=0, b=0, t=20),
             yaxis={"title": "cross entropy loss",},
             xaxis={
                 "title": "epochs",
@@ -984,7 +1007,8 @@ def demo_callbacks(app):
             },
             legend=dict(yanchor="bottom", y=0.1, 
                         xanchor="left", x=0.01),
-            paper_bgcolor="#f2f3f4"            
+            paper_bgcolor="#f2f3f4",
+            #style={'text-align': 'center'}
         )                
         # line charts
         trace_train = go.Scatter(
@@ -1026,7 +1050,17 @@ def demo_callbacks(app):
             y_train = []
             y_val = []          
         layout = go.Layout(
-            margin=go.layout.Margin(l=0, r=0, b=0, t=0),
+            title = dict(text="Training and Validation Accuracy",
+                         xanchor="center",
+                         yanchor="middle",
+                         x=0.5
+                        ),
+            titlefont = dict(
+                family = 'Arial, sans-serif',
+                size = 15,
+                color = '#6c7182'
+            ),
+            margin=go.layout.Margin(l=0, r=0, b=0, t=20),
             yaxis={
                 "title": "accuracy",
                 "range": [0.0,1.0]
@@ -1037,10 +1071,13 @@ def demo_callbacks(app):
             },
             legend=dict(yanchor="bottom", y=0.1, 
                         xanchor="left", x=0.01),
-            paper_bgcolor="#f2f3f4"            
+            paper_bgcolor="#f2f3f4",
+            #style={'text-align': 'center'}
         )                
         # line charts
         trace_train = go.Scatter(
+            text = "Training and Validation Accuracy",
+            textposition="top center",
             x=step,
             y=y_train,
             mode="lines+markers",

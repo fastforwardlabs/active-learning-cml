@@ -12,19 +12,19 @@ intuition for why active learning works, please see our blogpost -
 ![AL Screenshot](docs/images/al.png)
 
 ## What is Active Learning?
-Active learning is an iterative process, and relies on human input to build up a
+Active learning is an iterative process that relies on human input to build up a
 smartly labeled dataset. The process typically looks like this:
 
 * Begin with a small set of labeled data (that is all we have)
 * Train a model 
 * Use the trained model to run inference on a much larger pool of unlabeled data 
 available to us
-* Use a selection strategy to pick out points that are difficult for the machine
-* Request labels from human
-* Add these back into the labeled datapool
+* Use a selection strategy to pick out points that are difficult for the machine to predict correctly
+* Request labels from human for those difficult points
+* Add these examples back to the labeled dataset and retrain on the expanded dataset
 * Repeat the training and labeling process until you have achieved your desired model performance
 
-We use the MNIST dataset to illustrate the active learning workflow. To start, 
+We use the [MNIST dataset](http://yann.lecun.com/exdb/mnist/) to illustrate the active learning workflow. To start, 
 we train a convolutional neural network using only a few labeled datapoints. 
 You can kick off training by selecting appropriate hyperparameters and clicking 
 on the "TRAIN" button. Once the model has completed training, you can visualize 
@@ -120,7 +120,7 @@ In CML or CDSW, no virtual env is necessary. Instead, inside a Python 3 session
 ```
 
 #### Starting the application as a normal python session
-- First, specify the port in app.py by uncommenting the lines for `normal python session`
+- First, specify the port in apps/app.py by uncommenting the lines for `normal python session`
   ```
   # for normal python session uncomment below
   server = app.server
@@ -135,7 +135,7 @@ In CML or CDSW, no virtual env is necessary. Instead, inside a Python 3 session
   ```
 - Run
   ```
-  python app.py
+  python apps/app.py
   ```
 
 #### Starting the application within CML or CDSW

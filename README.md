@@ -139,7 +139,7 @@ In CML or CDSW, no virtual env is necessary. Instead, inside a Python 3 session
   ```
 
 #### Starting the application within CML or CDSW
-- First, specify the port in app.py by commenting the lines for `normal python session` 
+- First, specify the port in apps/app.py by commenting the lines for `normal python session` 
   ```
   # for normal python session uncomment below
   # server = app.server
@@ -153,6 +153,6 @@ In CML or CDSW, no virtual env is necessary. Instead, inside a Python 3 session
     # app.run_server(debug=True)
   ```
 - Second, set the subdomain in CDSW's Applications tab.
-- Third, enter app.py in the Script field in CDSW's Applications tab.
+- Third, enter apps/app.py in the Script field in CDSW's Applications tab.
 - Fourth, start the application within CDSW.
 - Finally, access demo at `subdomain.ffl-4.cdsw.eng.cloudera.com`
